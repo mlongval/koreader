@@ -153,6 +153,7 @@ local order = {
         "readiteventually",
         "kobohub",
         "kobochess",
+        "solitaire", -- github.com/Lalocaballero/solitaire.koplugin
         "----------------------------",
         "dev_mode",
     },

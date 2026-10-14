@@ -27,6 +27,12 @@ Base: **v2026.03** (`KOREADER_BASE` in kobo/install.sh).
   itself after 3 h), Wi-Fi off after 10 min unused, first-run settings
   (speed-reading plugin off, quick menu on hold top-left corner).
 
+Third-party plugins on the Kobo: **Solitaire**,
+github.com/Lalocaballero/solitaire.koplugin (MIT; installed at commit
+9f95960, 2026-10-14), listed in My Kobo. MenuSorter now puts a plugin
+whose sorting hint names a menu this fork lacks (e.g. "tools") in Menu >
+Tools instead of failing.
+
 The Kobo-specific plugins live in their own repos (KoboLanguage,
 KoboHub, Kobo-ReadItLater, KoboTailScale, KoboChess).
 

@@ -178,7 +178,15 @@ function MenuSorter:sort(item_table, order)
         end
         if sorting_hint then
             local sorting_hint_menu = self:findById(menu_table["KOMenu:menu_buttons"], sorting_hint)
-            sorting_hint_menu = sorting_hint_menu.sub_item_table or sorting_hint_menu
+            if sorting_hint_menu then
+                sorting_hint_menu = sorting_hint_menu.sub_item_table or sorting_hint_menu
+            else
+                -- Kobo fork: a hint to a menu this fork doesn't have (e.g.
+                -- "tools") must not break the menu; use Menu > Tools.
+                sorting_hint_menu = self:findById(menu_table["KOMenu:menu_buttons"], "more_tools")
+                sorting_hint_menu = sorting_hint_menu and sorting_hint_menu.sub_item_table
+                    or menu_table["KOMenu:menu_buttons"][1]
+            end
             table.insert(sorting_hint_menu, v)
         else
             table.insert(menu_table["KOMenu:menu_buttons"][1], v)
