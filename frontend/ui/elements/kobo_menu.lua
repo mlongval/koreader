@@ -62,7 +62,6 @@ function KoboMenu.tabs(close, ui)
         },
         search = { icon = "appbar.search", label = _("Search") },
         navi = { icon = "appbar.navigation", label = _("Book") },
-        typeset = { icon = "appbar.typeset", label = _("Style") },
         filemanager_settings = { icon = "appbar.filebrowser", label = _("Folder") },
     }
 end

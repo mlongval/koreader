@@ -3,6 +3,7 @@ local Device = require("device")
 local order = {
     ["KOMenu:disabled"] = {
         "language", -- Kobo fork: the interface stays in English
+        "frontlight", -- Kobo fork: Menu > Light (hold it for brightness)
     },
     ["KOMenu:menu_buttons"] = {
         "main",
@@ -25,7 +26,7 @@ local order = {
     setting = {
         -- common settings
         -- those that don't exist will simply be skipped during menu gen
-        "frontlight", -- if Device:hasFrontlight()
+        -- Kobo fork: no "frontlight" here, it is Menu > Light (hold: brightness)
         "night_mode",
         "----------------------------",
         "network",

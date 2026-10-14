@@ -29,9 +29,10 @@ function ReaderMenu:init()
     }
     local KoboMenu = require("ui/elements/kobo_menu")
     local tabs = KoboMenu.tabs(function() self:onTapCloseMenu() end, self.ui)
-    for _, id in ipairs{"main", "navi", "typeset", "search", "setting"} do
+    for _, id in ipairs{"main", "navi", "search", "setting"} do
         self.menu_items[id] = tabs[id]
     end
+    self.menu_items.typeset = { text = _("Style") } -- Book > Style
     KoboMenu.addItems(self.menu_items)
     self.menu_items.open_file_browser = {
         text = _("File browser"),

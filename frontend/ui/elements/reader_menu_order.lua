@@ -3,11 +3,11 @@ local Device = require("device")
 local order = {
     ["KOMenu:disabled"] = {
         "language", -- Kobo fork: the interface stays in English
+        "frontlight", -- Kobo fork: Menu > Light (hold it for brightness)
     },
     ["KOMenu:menu_buttons"] = {
         "main",
         "navi",
-        "typeset",
         "search",
         "setting",
     },
@@ -16,6 +16,8 @@ local order = {
         "bookmarks",
         "toggle_bookmark", -- if not Device:isTouchDevice() and not useDPadAsActionKeys()
         "bookmark_browsing_mode",
+        "typeset", -- Kobo fork: the Style tab, as a submenu of Book
+        "----------------------------",
         "navi_settings",
         "----------------------------",
         "hide_nonlinear_flows",
@@ -69,7 +71,7 @@ local order = {
     setting = {
         -- common settings
         -- those that don't exist will simply be skipped during menu gen
-        "frontlight", -- if Device:hasFrontlight()
+        -- Kobo fork: no "frontlight" here, it is Menu > Light (hold: brightness)
         "night_mode",
         "----------------------------",
         "network",

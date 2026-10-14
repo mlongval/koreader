@@ -8,8 +8,10 @@ Base: **v2026.03** (`KOREADER_BASE` in kobo/install.sh).
 
 ## Changes
 
-- **Top menu in words, 5 tabs**: Menu · Book · Style · Search · Settings
-  (file browser: Menu · Folder · Search · Settings). Every tab gets an
+- **Top menu in words, 4 tabs**: Menu · Book · Search · Settings (file
+  browser: Menu · Folder · Search · Settings). The Style tab is Book >
+  Style (its "Style" entry renamed Stylesheet); Settings > Frontlight is
+  gone (Menu > Light; hold it for brightness). Every tab gets an
   equal slot; Menu is at the left edge. `ui/widget/touchmenu.lua`
   (TouchMenuBar), `ui/elements/kobo_menu.lua`.
 - **Hold Menu** = light on/off (the tab shows ☀ when on); **hold

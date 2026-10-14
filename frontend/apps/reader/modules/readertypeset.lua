@@ -450,7 +450,7 @@ end
 function ReaderTypeset:addToMainMenu(menu_items)
     -- insert table to main reader menu
     menu_items.set_render_style = {
-        text = self.css_menu_title,
+        text = _("Stylesheet"), -- Kobo fork: it sits in Book > Style
         sub_item_table = self:genStyleSheetMenu(),
     }
 end
