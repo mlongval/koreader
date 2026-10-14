@@ -32,7 +32,16 @@ echo "$files" | tr " " "\n" | sed "s/^/  /"
 kobo "cd $KO && mkdir -p kobo-fork-originals && for f in $files; do
         [ -e \"\$f\" ] && [ ! -e \"kobo-fork-originals/\$f\" ] &&
         mkdir -p \"kobo-fork-originals/\$(dirname \"\$f\")\" && cp -p \"\$f\" \"kobo-fork-originals/\$f\"; done; true"
-tar -cf - $files | kobo "tar -C $KO -xf -"
+# Unpack beside, check every file, then move into place: a dropped
+# connection must never leave KOReader with a half-written file.
+tar -cf - $files | kobo "rm -rf $KO/.kobo-fork-new && mkdir -p $KO/.kobo-fork-new && tar -C $KO/.kobo-fork-new -xf -"
+want=$(for f in $files; do printf '%s %s\n' "$(md5sum < "$f" | cut -c1-32)" "$f"; done)
+got=$(kobo "cd $KO/.kobo-fork-new && for f in $files; do printf '%s %s\\n' \"\$(md5sum < \$f | cut -c1-32)\" \"\$f\"; done")
+if [ "$want" != "$got" ]; then
+    echo "Copy to the Kobo was incomplete; nothing changed. Run again." >&2
+    exit 1
+fi
+kobo "cd $KO/.kobo-fork-new && for f in $files; do mkdir -p \"$KO/\$(dirname \$f)\" && mv -f \"\$f\" \"$KO/\$f\"; done && cd $KO && rm -rf .kobo-fork-new"
 [ -n "${gone# }" ] && kobo "cd $KO && rm -f $gone"
 git describe --always --dirty | kobo "cat > $KO/kobo-fork-version"
 echo "Installed $(git describe --always --dirty). Restart KOReader."
