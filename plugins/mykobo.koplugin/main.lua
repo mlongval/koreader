@@ -7,8 +7,9 @@ hours, so a forgotten switch can't drain the battery. Outside Dev mode,
 Wi-Fi is turned off after 10 minutes without use.
 
 "Use" is measured on the Wi-Fi interface: a minute with more than a
-little traffic counts as used. Tailscale's keep-alives stay under the
-threshold, and minutes in which KoboHub is checked in the background
+little traffic counts as used (a single translation is too small to
+show; a tap after Wi-Fi went off just brings it back). Tailscale's
+keep-alives stay under the threshold, and minutes in which KoboHub is checked in the background
 (kobohub_client busy) don't count either way, so the automatic checks
 don't keep Wi-Fi on.
 
@@ -33,7 +34,9 @@ local T = require("ffi/util").template
 
 local DEV_HOURS = 3
 local WIFI_IDLE = 10 * 60      -- seconds without use before Wi-Fi goes off
-local USE_BYTES = 20 * 1024    -- per minute sent: more than this is use
+-- Sent per minute: more than this is use. Measured on the Elipsa
+-- (2026-10-14), Tailscale alone sends about 20 KB a minute.
+local USE_BYTES = 60 * 1024
 local UNTIL = "kobo_devmode_until"
 
 local QUICK_MENU = {
