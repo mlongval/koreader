@@ -24,15 +24,15 @@ case "$rev" in
        exit 1 ;;
 esac
 
-files=$(git diff --name-only --diff-filter=AM "$KOREADER_BASE" HEAD -- frontend plugins)
-gone=$(git diff --name-only --diff-filter=D "$KOREADER_BASE" HEAD -- frontend plugins)
-echo "$files" | sed 's/^/  /'
+files=$(git diff --name-only --diff-filter=AM "$KOREADER_BASE" HEAD -- frontend plugins | tr "\n" " ")
+gone=$(git diff --name-only --diff-filter=D "$KOREADER_BASE" HEAD -- frontend plugins | tr "\n" " ")
+echo "$files" | tr " " "\n" | sed "s/^/  /"
 
 # keep the originals once
 kobo "cd $KO && mkdir -p kobo-fork-originals && for f in $files; do
         [ -e \"\$f\" ] && [ ! -e \"kobo-fork-originals/\$f\" ] &&
         mkdir -p \"kobo-fork-originals/\$(dirname \"\$f\")\" && cp -p \"\$f\" \"kobo-fork-originals/\$f\"; done; true"
 tar -cf - $files | kobo "tar -C $KO -xf -"
-[ -n "$gone" ] && kobo "cd $KO && rm -f $gone"
+[ -n "${gone# }" ] && kobo "cd $KO && rm -f $gone"
 git describe --always --dirty | kobo "cat > $KO/kobo-fork-version"
 echo "Installed $(git describe --always --dirty). Restart KOReader."
