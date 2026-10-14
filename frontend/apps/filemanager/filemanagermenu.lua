@@ -32,23 +32,14 @@ function FileManagerMenu:init()
         ["KOMenu:menu_buttons"] = {
             -- top menu
         },
-        -- items in top menu
-        filemanager_settings = {
-            icon = "appbar.filebrowser",
-        },
-        setting = {
-            icon = "appbar.settings",
-        },
-        tools = {
-            icon = "appbar.tools",
-        },
-        search = {
-            icon = "appbar.search",
-        },
-        main = {
-            icon = "appbar.menu",
-        },
+        -- items in top menu: see ui/elements/kobo_menu.lua
     }
+    local KoboMenu = require("ui/elements/kobo_menu")
+    local tabs = KoboMenu.tabs(function() self:onCloseFileManagerMenu() end, self.ui)
+    for _, id in ipairs{"main", "filemanager_settings", "search", "setting"} do
+        self.menu_items[id] = tabs[id]
+    end
+    KoboMenu.addItems(self.menu_items)
 
     self.registered_widgets = {}
 

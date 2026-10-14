@@ -25,35 +25,22 @@ function ReaderMenu:init()
         ["KOMenu:menu_buttons"] = {
             -- top menu
         },
-        -- items in top menu
-        navi = {
-            icon = "appbar.navigation",
-        },
-        typeset = {
-            icon = "appbar.typeset",
-        },
-        setting = {
-            icon = "appbar.settings",
-        },
-        tools = {
-            icon = "appbar.tools",
-        },
-        search = {
-            icon = "appbar.search",
-        },
-        filemanager = {
-            icon = "appbar.filebrowser",
-            remember = false,
-            callback = function()
-                self:onTapCloseMenu()
-                local file = self.ui.document.file
-                self.ui:onClose()
-                self.ui:showFileManager(file)
-            end,
-        },
-        main = {
-            icon = "appbar.menu",
-        }
+        -- items in top menu: see ui/elements/kobo_menu.lua
+    }
+    local KoboMenu = require("ui/elements/kobo_menu")
+    local tabs = KoboMenu.tabs(function() self:onTapCloseMenu() end, self.ui)
+    for _, id in ipairs{"main", "navi", "typeset", "search", "setting"} do
+        self.menu_items[id] = tabs[id]
+    end
+    KoboMenu.addItems(self.menu_items)
+    self.menu_items.open_file_browser = {
+        text = _("File browser"),
+        callback = function()
+            self:onTapCloseMenu()
+            local file = self.ui.document.file
+            self.ui:onClose()
+            self.ui:showFileManager(file)
+        end,
     }
 
     self.registered_widgets = {}

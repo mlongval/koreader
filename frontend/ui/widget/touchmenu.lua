@@ -280,147 +280,98 @@ TouchMenuBar widget
 --]]
 local TouchMenuBar = InputContainer:extend{
     width = Screen:getWidth(),
-    icons = nil, -- array, mandatory
+    tabs = nil, -- array of tab items, mandatory: { icon, label or label_func, hold_callback }
     -- touch menu that holds the bar, used for trigger repaint on icons
     show_parent = nil,
     menu = nil,
 }
 
+-- Kobo fork: every tab gets an equal slot. A tab with a label (or
+-- label_func) is shown as that word; one without keeps its icon. A tab
+-- may have a hold_callback (tabs have no other use for hold).
 function TouchMenuBar:init()
-    local icon_sep_width = Size.span.vertical_default
-    local icons_sep_width = icon_sep_width * (#self.icons + 1)
-    -- we assume all icons are of the same width
-    local icon_width = Screen:scaleBySize(DGENERIC_ICON_SIZE)
-    local icon_height = icon_width
-    -- content_width is the width of all the icon images
-    local content_width = icon_width * #self.icons + icons_sep_width
-    local spacing_width = (self.width - content_width)/(#self.icons*2)
-    local icon_padding = math.min(spacing_width, Screen:scaleBySize(16))
-    self.height = icon_height + 2*Size.padding.default
+    local n = #self.tabs
+    local sep_width = Size.span.vertical_default
+    local icon_size = Screen:scaleBySize(DGENERIC_ICON_SIZE)
+    self.height = icon_size + 2*Size.padding.default
+    local slot = math.floor((self.width - sep_width * (n + 1)) / n)
     self.show_parent = self.show_parent or self
     self.bar_icon_group = HorizontalGroup:new{}
-    -- build up image widget for menu icon bar
     self.icon_widgets = {}
-    -- hold icon separators
     self.icon_seps = {}
-    -- the start_seg for first icon_widget should be 0
-    -- we assign negative here to offset it in the loop
-    local start_seg = -icon_sep_width
-    local end_seg = start_seg
-    -- self.width is the screen width
-    -- content_width is the width of all the icon images
-    -- (2 * icon_padding * #self.icons) is the combined width of icons paddings
-    local stretch_width = self.width - content_width - (2 * icon_padding * #self.icons) + icon_sep_width
 
-    for k, v in ipairs(self.icons) do
-        local ib = IconButton:new{
-            show_parent = self.show_parent,
-            icon = v,
-            width = icon_width,
-            height = icon_height,
-            callback = nil,
-            padding_left = icon_padding,
-            padding_right = icon_padding,
-            menu = self.menu,
+    local function sep()
+        local w = LineWidget:new{
+            style = "none",
+            dimen = Geom:new{ w = sep_width, h = self.height },
         }
+        table.insert(self.icon_seps, w)
+        return w
+    end
 
-        table.insert(self.icon_widgets, ib)
-        table.insert(self.menu.layout, ib) -- for the focusmanager
-
-        -- we have to use local variable here for closure callback
-        local _start_seg = end_seg + icon_sep_width
-        local _end_seg = _start_seg + self.icon_widgets[k]:getSize().w
-        end_seg = _end_seg -- for next loop _start_seg
-
-        if BD.mirroredUILayout() then
-            _start_seg, _end_seg = self.width - _end_seg, self.width - _start_seg
+    table.insert(self.bar_icon_group, sep())
+    local x = sep_width
+    for k, tab in ipairs(self.tabs) do
+        local label = tab.label_func and tab.label_func() or tab.label
+        local hold = tab.hold_callback and function()
+            tab.hold_callback(self.menu)
         end
+        local w
+        if label then
+            w = Button:new{
+                text = label,
+                width = slot,
+                height = self.height,
+                bordersize = 0,
+                margin = 0,
+                padding = 0,
+                padding_h = Size.padding.small,
+                radius = 0,
+                text_font_size = 20,
+                text_font_bold = false,
+                avoid_text_truncation = true,
+                show_parent = self.show_parent,
+                hold_callback = hold,
+                callback = nil,
+            }
+            w.image = w.frame -- what menu search highlights
+        else
+            w = IconButton:new{
+                show_parent = self.show_parent,
+                icon = tab.icon,
+                width = icon_size,
+                height = icon_size,
+                padding_left = math.floor((slot - icon_size) / 2),
+                padding_right = slot - icon_size - math.floor((slot - icon_size) / 2),
+                hold_callback = hold,
+                callback = nil,
+                menu = self.menu,
+            }
+        end
+        table.insert(self.icon_widgets, w)
+        table.insert(self.menu.layout, w) -- for the focusmanager
 
+        local s, e = x, x + slot
+        if BD.mirroredUILayout() then
+            s, e = self.width - e, self.width - s
+        end
         if k == 1 then
             self.bar_sep = LineWidget:new{
-                dimen = Geom:new{
-                    w = self.width,
-                    h = Size.line.thick,
-                },
-                empty_segments = {
-                    {
-                        s = _start_seg, e = _end_seg
-                    }
-                },
+                dimen = Geom:new{ w = self.width, h = Size.line.thick },
+                empty_segments = { { s = s, e = e } },
             }
         end
-
-        local icon_sep = LineWidget:new{
-            style = k == 1 and "solid" or "none",
-            dimen = Geom:new{
-                w = icon_sep_width,
-                h = self.height,
-            }
-        }
-        -- no separator on the right
-        if k < #self.icons then
-            table.insert(self.icon_seps, icon_sep)
-        end
-
-        -- callback to set visual style
-        ib.callback = function()
-            self.bar_sep.empty_segments = {
-                {
-                    s = _start_seg, e = _end_seg
-                }
-            }
-            for i, sep in ipairs(self.icon_seps) do
-                local current_icon, last_icon
-                if k == #self.icons then
-                    current_icon = false
-                    last_icon = i == k
-                else
-                    current_icon = i == k - 1 or i == k
-                    last_icon = false
-                end
-
-                -- if the active icon is the last icon then the empty bar segment has
-                -- to move over to the right by the width of a separator and the stretch width
-                if last_icon then
-                    local _start_last_seg = icon_sep_width + stretch_width + _start_seg
-                    local _end_last_seg = icon_sep_width + stretch_width + _end_seg
-                    if BD.mirroredUILayout() then
-                        _start_last_seg = _start_seg - icon_sep_width - stretch_width
-                        _end_last_seg = _end_seg - icon_sep_width - stretch_width
-                    end
-                    self.bar_sep.empty_segments = {
-                        {
-                            s = _start_last_seg, e = _end_last_seg
-                        }
-                    }
-                    sep.style = "solid"
-                -- regular behavior
-                else
-                    sep.style = current_icon and "solid" or "none"
-                end
+        w.callback = function()
+            self.bar_sep.empty_segments = { { s = s, e = e } }
+            for i, sp in ipairs(self.icon_seps) do
+                -- the separators on either side of the active tab
+                sp.style = (i == k or i == k + 1) and "solid" or "none"
             end
             self.menu:switchMenuTab(k)
         end
-
-        table.insert(self.bar_icon_group, self.icon_widgets[k])
-        table.insert(self.bar_icon_group, icon_sep)
-
-        -- if we're at the before-last icon, add an extra span and the final separator
-        if k == #self.icons - 1 then
-            table.insert(self.bar_icon_group, HorizontalSpan:new{
-                width = stretch_width
-            })
-            -- need to create a new LineWidget otherwise it's just a reference to the same instance
-            local icon_sep_duplicate = LineWidget:new{
-                style = "none",
-                dimen = Geom:new{
-                    w = icon_sep_width,
-                    h = self.height,
-                }
-            }
-            table.insert(self.icon_seps, icon_sep_duplicate)
-            table.insert(self.bar_icon_group, icon_sep_duplicate)
-        end
+        table.insert(self.bar_icon_group, w)
+        table.insert(self.bar_icon_group, sep())
+        x = e + sep_width
     end
 
     self[1] = FrameContainer:new{
@@ -428,7 +379,7 @@ function TouchMenuBar:init()
         padding = 0,
         VerticalGroup:new{
             align = "left",
-            -- bar icons
+            -- bar tabs
             self.bar_icon_group,
             -- horizontal separate line
             self.bar_sep
@@ -517,13 +468,9 @@ function TouchMenu:init()
     self.key_events.NextPage = { { Input.group.PgFwd } }
     self.key_events.PrevPage = { { Input.group.PgBack } }
 
-    local icons = {}
-    for _, v in ipairs(self.tab_item_table) do
-        table.insert(icons, v.icon)
-    end
     self.bar = TouchMenuBar:new{
         width = self.width, -- will impose width and push left and right borders offscreen
-        icons = icons,
+        tabs = self.tab_item_table,
         show_parent = self.show_parent,
         menu = self,
     }

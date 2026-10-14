@@ -1,0 +1,38 @@
+#!/bin/sh
+# Install the Kobo fork's changes on a Kobo that runs the official KOReader
+# release this branch is based on (KOREADER_BASE below). Only the Lua files
+# this branch changes or adds are copied; KOReader's compiled parts stay
+# the official ones. The first install keeps the originals in
+# .adds/koreader/kobo-fork-originals/. Restart KOReader afterwards.
+#
+#   kobo/install.sh [IP]          (KOReader's SSH server, port 2222)
+set -eu
+KOREADER_BASE=v2026.03
+IP=${1:-100.118.103.93}
+cd "$(dirname "$0")/.."
+KO=/mnt/onboard/.adds/koreader
+
+kobo() {
+    sshpass -p '' ssh -o ConnectTimeout=10 -o ServerAliveInterval=5 -p 2222 "root@$IP" "$@"
+}
+
+rev=$(kobo "cat $KO/git-rev")
+case "$rev" in
+    "$KOREADER_BASE"*) ;;
+    *) echo "The Kobo runs KOReader $rev; this branch is based on $KOREADER_BASE." >&2
+       echo "Merge that release into the branch first (see kobo/README.md)." >&2
+       exit 1 ;;
+esac
+
+files=$(git diff --name-only --diff-filter=AM "$KOREADER_BASE" HEAD -- frontend plugins)
+gone=$(git diff --name-only --diff-filter=D "$KOREADER_BASE" HEAD -- frontend plugins)
+echo "$files" | sed 's/^/  /'
+
+# keep the originals once
+kobo "cd $KO && mkdir -p kobo-fork-originals && for f in $files; do
+        [ -e \"\$f\" ] && [ ! -e \"kobo-fork-originals/\$f\" ] &&
+        mkdir -p \"kobo-fork-originals/\$(dirname \"\$f\")\" && cp -p \"\$f\" \"kobo-fork-originals/\$f\"; done; true"
+tar -cf - $files | kobo "tar -C $KO -xf -"
+[ -n "$gone" ] && kobo "cd $KO && rm -f $gone"
+git describe --always --dirty | kobo "cat > $KO/kobo-fork-version"
+echo "Installed $(git describe --always --dirty). Restart KOReader."

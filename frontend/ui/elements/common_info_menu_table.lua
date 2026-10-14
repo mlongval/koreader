@@ -13,9 +13,9 @@ local T = require("ffi/util").template
 
 local common_info = {}
 
--- tools tab
+-- Menu > Tools (Kobo fork: all tools in one list)
 common_info.more_tools = {
-    text = _("More tools"),
+    text = _("Tools"),
 }
 
 -- main tab
