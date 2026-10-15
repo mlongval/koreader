@@ -37,10 +37,10 @@ return {
         {
             text = _("Auto-show bottom menu"),
             checked_func = function()
-                return G_reader_settings:nilOrTrue("show_bottom_menu")
+                return G_reader_settings:isTrue("show_bottom_menu") -- Kobo fork: off by default
             end,
             callback = function()
-                G_reader_settings:flipNilOrTrue("show_bottom_menu")
+                G_reader_settings:flipNilOrFalse("show_bottom_menu")
             end,
         },
     }

@@ -489,7 +489,7 @@ end
 
 function ReaderMenu:onSwipeShowMenu(ges)
     if self.activation_menu ~= "tap" and ges.direction == "south" then
-        if G_reader_settings:nilOrTrue("show_bottom_menu") then
+        if G_reader_settings:isTrue("show_bottom_menu") then -- Kobo fork: off by default
             self.ui:handleEvent(Event:new("ShowConfigMenu"))
         end
         self:onShowMenu(self:_getTabIndexFromLocation(ges))
@@ -500,7 +500,7 @@ end
 
 function ReaderMenu:onTapShowMenu(ges)
     if self.activation_menu ~= "swipe" then
-        if G_reader_settings:nilOrTrue("show_bottom_menu") then
+        if G_reader_settings:isTrue("show_bottom_menu") then -- Kobo fork: off by default
             self.ui:handleEvent(Event:new("ShowConfigMenu"))
         end
         self:onShowMenu(self:_getTabIndexFromLocation(ges))
@@ -509,7 +509,7 @@ function ReaderMenu:onTapShowMenu(ges)
 end
 
 function ReaderMenu:onPressMenu()
-    if G_reader_settings:nilOrTrue("show_bottom_menu") then
+    if G_reader_settings:isTrue("show_bottom_menu") then -- Kobo fork: off by default
         self.ui:handleEvent(Event:new("ShowConfigMenu"))
     end
     self:onShowMenu()
