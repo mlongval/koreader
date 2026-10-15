@@ -1,0 +1,55 @@
+--- a/solitaireui.lua
++++ b/solitaireui.lua
+@@ -58,9 +58,8 @@
+     self.margin = math.floor(self.screen_width * 0.02)
+ 
+     -- Desired pixel heights as fractions of card_width
+-    local corner_px      = math.floor(self.card_width/2)  -- rank + corner suit
+-    local center_suit_px = math.floor(self.card_width)    -- large centre suit
+-    local status_pt      = math.floor(self.status_bar_height * 1.45)
++    local corner_px      = math.floor(self.card_width * 0.32) -- rank + corner suit
++    local center_suit_px = math.floor(self.card_width * 0.55) -- centre suit
+ 
+ 
+     -- Monospace font for rank and suit symbols to ensure proper alignment
+@@ -68,7 +67,6 @@
+     self.suit_font        = Font:getFace("scfont", px_to_pt(corner_px))
+     self.suit_center_font = Font:getFace("scfont", px_to_pt(center_suit_px))
+     self.small_font       = Font:getFace("scfont", px_to_pt(center_suit_px)) -- Empty Aces slots
+-    self.status_font      = Font:getFace("scfont", px_to_pt(status_pt)) -- Status bar font size based on its height
+     -- Save file path
+     self.save_path = DataStorage:getSettingsDir() .. "/solitaire_save.lua"
+ 
+@@ -252,10 +250,7 @@
+         background = Blitbuffer.COLOR_LIGHT_GRAY,
+         CenterContainer:new{
+             dimen = Geom:new{w = self.screen_width - 10, h = self.status_bar_height - 10},
+-            TextWidget:new{
+-                text = status_text,
+-                face = self.status_font,
+-            }
++            self:statusText(status_text, self.screen_width - 30, self.status_bar_height - 10),
+         }
+     }
+ 
+@@ -285,6 +280,20 @@
+     }
+ end
+ 
++-- The status line in the largest font that fits the bar (about half its
++-- height), made smaller until the whole line fits across the screen.
++-- Font:getFace scales sizes by the screen's DPI itself.
++function SolitaireUI:statusText(text, max_w, bar_h)
++    local size = math.floor(bar_h * 0.6 * 1000 / Screen:scaleBySize(1000))
++    local widget
++    while true do
++        widget = TextWidget:new{ text = text, face = Font:getFace("scfont", size) }
++        if widget:getSize().w <= max_w or size <= 8 then return widget end
++        widget:free()
++        size = size - 1
++    end
++end
++
+ function SolitaireUI:drawGame(bb, offset_x, offset_y)
+     local y_offset = offset_y + 10
+ 

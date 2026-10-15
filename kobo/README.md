@@ -29,7 +29,11 @@ Base: **v2026.03** (`KOREADER_BASE` in kobo/install.sh).
 
 Third-party plugins on the Kobo: **Solitaire**,
 github.com/Lalocaballero/solitaire.koplugin (MIT; installed at commit
-9f95960, 2026-10-14), listed in My Kobo. MenuSorter now puts a plugin
+9f95960, 2026-10-14), listed in My Kobo, with
+`solitaire-sizes.patch` applied (`patch -p1` in the plugin
+folder): on the Elipsa the status line was cut off and the rank
+and suit symbols too big; now the status line fits the bar and the
+screen width, and the symbols are about half their old size. MenuSorter now puts a plugin
 whose sorting hint names a menu this fork lacks (e.g. "tools") in Menu >
 Tools instead of failing.
 
