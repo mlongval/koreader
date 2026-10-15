@@ -71,9 +71,8 @@ local order = {
     setting = {
         -- common settings
         -- those that don't exist will simply be skipped during menu gen
-        -- Kobo fork: no "frontlight" here, it is Menu > Light (hold: brightness)
-        "night_mode",
-        "----------------------------",
+        -- Kobo fork: no "frontlight" here, it is Menu > Light (hold: brightness);
+        -- night_mode is in Menu, under Light
         "network",
         "screen",
         "----------------------------",
@@ -235,6 +234,7 @@ local order = {
     },
     main = {
         "light_toggle",
+        "night_mode", -- Kobo fork: moved from Settings
         "network_panel",
         "----------------------------",
         "open_file_browser",
