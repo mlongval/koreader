@@ -419,7 +419,7 @@ local TouchMenu = FocusManager:extend{
     split_color = Blitbuffer.COLOR_GRAY,
     width = nil,
     height = nil,
-    max_per_page_default = 10,
+    max_per_page_default = 99, -- Kobo fork: as many as the screen holds (stock: 10)
     -- for UIManager:setDirty
     show_parent = nil,
     cur_tab = -1,
