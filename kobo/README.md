@@ -26,6 +26,11 @@ Base: **v2026.03** (`KOREADER_BASE` in kobo/install.sh).
 - `plugins/mykobo.koplugin`: Dev mode (no sleep, Wi-Fi kept, off by
   itself after 3 h), Wi-Fi off after 10 min unused, first-run settings
   (speed-reading plugin off, quick menu on hold top-left corner).
+- **Progress sync never makes you wait** (`plugins/kosync.koplugin`):
+  stock auto sync turns Wi-Fi on and waits for it on every wake, sleep
+  and book close (over a minute with no network in reach). Now waking
+  starts Wi-Fi in the background and pulls when it connects; sleep and
+  closing a book push only when already online.
 
 Third-party plugins on the Kobo: **Solitaire**,
 github.com/Lalocaballero/solitaire.koplugin (MIT; installed at commit

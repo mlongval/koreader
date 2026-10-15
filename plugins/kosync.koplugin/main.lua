@@ -874,10 +874,9 @@ function KOSync:_onCloseDocument()
     --       we cannot rely on willRerunWhenOnline, because if we're not currently online,
     --       it *will* return early, and that means the actual callback *will* run *after* teardown of the document instance
     --       (and quite likely ours, too).
-    NetworkMgr:goOnlineToRun(function()
-        -- Drop the inner willRerunWhenOnline ;).
-        self:updateProgress(false, false)
-    end)
+    -- Kobo fork: only when already online; closing a book never waits for Wi-Fi.
+    if not NetworkMgr:isConnected() then return end
+    self:updateProgress(false, false)
 end
 
 function KOSync:schedulePeriodicPush()
@@ -911,17 +910,26 @@ function KOSync:_onResume()
         return
     end
 
-    -- And if we don't, this *will* (attempt to) trigger a connection and as such a NetworkConnected event,
-    -- but only a single pull will happen, since getProgress debounces itself.
-    UIManager:scheduleIn(1, function()
-        self:getProgress(true, false)
-    end)
+    -- Kobo fork: waking up never waits for the network. Online: pull now. Off:
+    -- Wi-Fi starts in the background (as auto_restore_wifi does) and the pull
+    -- comes with NetworkConnected; with no network in reach nothing is shown.
+    if NetworkMgr:isConnected() then
+        UIManager:scheduleIn(1, function()
+            self:getProgress(false, false)
+        end)
+    elseif Device:hasWifiRestore() and G_reader_settings:readSetting("wifi_enable_action") == "turn_on"
+            and not NetworkMgr.pending_connection then
+        NetworkMgr:restoreWifiAsync()
+        NetworkMgr:scheduleConnectivityCheck()
+    end
 end
 
 function KOSync:_onSuspend()
     logger.dbg("KOSync: onSuspend")
-    -- We request an extra flashing refresh on success, to deal with potential ghosting left by the NetworkMgr UI
-    self:updateProgress(true, false, true)
+    -- Kobo fork: only when already online; going to sleep never waits for Wi-Fi.
+    -- (Offline, the place is sent with the next page turns or when Wi-Fi goes off.)
+    if not NetworkMgr:isConnected() then return end
+    self:updateProgress(false, false, true)
 end
 
 function KOSync:_onNetworkConnected()
