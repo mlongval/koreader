@@ -65,6 +65,7 @@ local CreDocument = Document:extend{
         "FreeSerif",
         "Noto Serif",
         "Noto Sans",
+        "Kobo Icons", -- Kobo fork: fonts/kobo/koboicons.ttf, the Wi-Fi icon in the top bar
     },
 
     default_css = nil,
@@ -126,6 +127,15 @@ function CreDocument:engineInit()
                     logger.err("failed to register crengine font:", err)
                 end
             end
+        end
+        -- Kobo fork: Kobo Icons is only a fallback (icons), not a font to choose
+        local getFontFaces = cre.getFontFaces
+        cre.getFontFaces = function()
+            local faces = {}
+            for _, face in ipairs(getFontFaces()) do
+                if face ~= "Kobo Icons" then table.insert(faces, face) end
+            end
+            return faces
         end
         -- Make sure registered fonts have a proper entry at weight 400 and 700 when
         -- possible, to avoid having synthesized fonts for these normal and bold weights.

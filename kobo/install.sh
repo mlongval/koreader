@@ -24,8 +24,8 @@ case "$rev" in
        exit 1 ;;
 esac
 
-files=$(git diff --name-only --diff-filter=AM "$KOREADER_BASE" HEAD -- frontend plugins | tr "\n" " ")
-gone=$(git diff --name-only --diff-filter=D "$KOREADER_BASE" HEAD -- frontend plugins | tr "\n" " ")
+files=$(git diff --name-only --diff-filter=AM "$KOREADER_BASE" HEAD -- frontend plugins fonts | tr "\n" " ")
+gone=$(git diff --name-only --diff-filter=D "$KOREADER_BASE" HEAD -- frontend plugins fonts | tr "\n" " ")
 echo "$files" | tr " " "\n" | sed "s/^/  /"
 
 # keep the originals once

@@ -195,7 +195,25 @@ local MyKobo = WidgetContainer:extend{
     is_doc_only = false,
 }
 
+-- The Wi-Fi icon in the top bar (crengine's Alt status bar), right of the
+-- clock: the footer's icons, from the Nerd symbols font (a crengine
+-- fallback font in this fork, see CreDocument.fallback_fonts).
+local function wifiHeader()
+    return NetworkMgr:isWifiOn() and "\u{ECA8}" or "\u{ECA9}"
+end
+
+function MyKobo:refreshHeader()
+    local cre = self.ui.crelistener
+    if cre then
+        cre:updatePageInfoOverride()
+        cre:updateHeader()
+    end
+end
+
 function MyKobo:init()
+    if self.ui.crelistener then
+        self.ui.crelistener:addAdditionalHeaderContent(wifiHeader)
+    end
     Dispatcher:registerAction("toggle_dev_mode", {
         category = "none", event = "ToggleDevMode", title = _("Dev mode on/off"), general = true,
     })
@@ -209,11 +227,13 @@ end
 
 function MyKobo:onNetworkConnected()
     startIdleCheck()
+    self:refreshHeader()
 end
 
 function MyKobo:onNetworkDisconnected()
     if state.idle_task then UIManager:unschedule(state.idle_task) end
     state.idle_task = nil
+    self:refreshHeader()
 end
 
 function MyKobo:onResume()
