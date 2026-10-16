@@ -1039,7 +1039,8 @@ function Menu:updatePageInfo(select_number)
         self.page_info_last_chev:enableDisable(self.page < self.page_num)
         self.page_return_arrow:enableDisable(#self.paths > 0)
     else
-        self.page_info_text:setText(_("No items"))
+        -- Kobo fork: not in the file browser, whose folders are in the strip above
+        self.page_info_text:setText(self.folder_strip_callback and "" or _("No items"))
         self.page_info_text:disableWithoutDimming()
 
         self.page_info_left_chev:hide()
