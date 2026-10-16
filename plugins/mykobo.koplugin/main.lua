@@ -216,8 +216,20 @@ local function booksFolder(ui)
         if f:sub(1, 1) ~= "." and lfs.attributes(path, "mode") == "file"
                 and ui.file_chooser:show_file(f) and DocumentRegistry:hasProvider(path)
                 and not lfs.attributes(new_path, "mode") then
+            local old_sdr = DocSettings:getSidecarDir(path)
             if os.rename(path, new_path) then
                 DocSettings.updateLocation(path, new_path)
+                -- other plugins' files in the sidecar (learnmode's caches) move too
+                if lfs.attributes(old_sdr, "mode") == "directory" then
+                    local new_sdr = DocSettings:getSidecarDir(new_path)
+                    util.makePath(new_sdr)
+                    for name in lfs.dir(old_sdr) do
+                        if name ~= "." and name ~= ".." and not lfs.attributes(new_sdr .. "/" .. name, "mode") then
+                            os.rename(old_sdr .. "/" .. name, new_sdr .. "/" .. name)
+                        end
+                    end
+                    os.remove(old_sdr) -- only goes if empty
+                end
                 moved[path] = true
                 n = n + 1
                 if lastfile == path then
