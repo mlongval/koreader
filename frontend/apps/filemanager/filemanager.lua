@@ -14,6 +14,7 @@ local FileManagerBookInfo = require("apps/filemanager/filemanagerbookinfo")
 local FileManagerCollection = require("apps/filemanager/filemanagercollection")
 local FileManagerConverter = require("apps/filemanager/filemanagerconverter")
 local FileManagerFileSearcher = require("apps/filemanager/filemanagerfilesearcher")
+local FileManagerFolderStrip = require("apps/filemanager/filemanagerfolderstrip")
 local FileManagerHistory = require("apps/filemanager/filemanagerhistory")
 local FileManagerMenu = require("apps/filemanager/filemanagermenu")
 local FileManagerShortcuts = require("apps/filemanager/filemanagershortcuts")
@@ -131,6 +132,11 @@ function FileManager:setupLayout()
         left_icon_size_ratio = 1,
         left_icon_tap_callback = function() self:onHome() end,
         left_icon_hold_callback = function() self:onShowFolderMenu() end,
+        -- Kobo fork: "up" beside the House (the "../" tile is gone)
+        left2_icon = "chevron.up",
+        left2_icon_size_ratio = 1,
+        left2_icon_tap_callback = function() self.file_chooser:onFolderUp() end,
+        left2_icon_hold_callback = false,
         right_icon = self.selected_files and "check" or "plus",
         right_icon_size_ratio = 1,
         right_icon_tap_callback = function() self:onShowPlusMenu() end,
@@ -152,6 +158,13 @@ function FileManager:setupLayout()
         custom_title_bar = self.title_bar,
         search_callback = function(search_string)
             self.filesearcher:onShowFileSearch(search_string)
+        end,
+        -- Kobo fork: folders as a strip under the title bar, not grid tiles
+        folder_strip_callback = function(chooser, dirs)
+            self.title_bar:setBottomWidget(FileManagerFolderStrip.new(chooser, dirs,
+                self.title_bar.width, self.show_parent,
+                function(item) chooser:changeToPath(item.path) end,
+                function(item) chooser:onFileHold(item) end))
         end,
     }
     self.file_chooser = file_chooser

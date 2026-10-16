@@ -36,6 +36,7 @@ local FileChooser = BookList:extend{
         "^markups$",
         "^webstorage$",
         "^%.kobo%-images$",
+        "^fonts$", -- Kobo fork: the Kobo's own font folder
         -- macOS
         "^%.fseventsd$",
         "^%.Trashes$",
@@ -71,6 +72,9 @@ local FileChooser = BookList:extend{
         "^%.metadata%.json$",
     },
     path_items = nil, -- hash, store last browsed location (item index) for each path
+    -- Kobo fork: folders are not items but go to folder_strip_callback(self, dirs)
+    -- before each refresh (the file browser's folder strip); no "../" item either
+    folder_strip_callback = nil,
 }
 
 -- Cache of content we knew of for directories that are not readable
@@ -252,6 +256,20 @@ function FileChooser:genItemTable(dirs, files, path)
         table.move(files, 1, #files, #item_table + 1, item_table)
     end
 
+    if path and self.folder_strip_callback then
+        local kept, strip = {}, {}
+        for _, item in ipairs(item_table) do
+            if item.is_file or item.path == path then -- (path: the "not readable" message)
+                table.insert(kept, item)
+            else
+                table.insert(strip, item)
+            end
+        end
+        table.sort(strip, self:getSortingFunction(self.collates.strcoll)) -- by name, always
+        self.strip_dirs = strip
+        return kept
+    end
+
     if path then -- file browser or PathChooser
         if path ~= "/" and not (G_reader_settings:isTrue("lock_home_folder") and
                                 path == G_reader_settings:readSetting("home_dir")) then
@@ -322,7 +340,18 @@ function FileChooser:refreshPath()
         self.focused_path = nil
     end
     local subtitle = self.name ~= "filemanager" and BD.directory(filemanagerutil.abbreviate(self.path)) -- PathChooser
-    self:switchItemTable(nil, self:genItemTableFromPath(self.path), self.path_items[self.path], itemmatch, subtitle)
+    local item_table = self:genItemTableFromPath(self.path)
+    if self.folder_strip_callback then
+        self.folder_strip_callback(self, self.strip_dirs or {})
+        if itemmatch then -- a folder we came up from is in the strip, not in the items
+            local found
+            for _, item in ipairs(item_table) do
+                if item.path == itemmatch.path then found = true break end
+            end
+            if not found then itemmatch = nil end
+        end
+    end
+    self:switchItemTable(nil, item_table, self.path_items[self.path], itemmatch, subtitle)
 end
 
 function FileChooser:changeToPath(path, focused_path)

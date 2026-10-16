@@ -58,6 +58,15 @@ local TitleBar = OverlapGroup:extend{
     left_icon_tap_callback = function() end,
     left_icon_hold_callback = function() end,
     left_icon_allow_flash = true,
+    -- Kobo fork: a second icon right of the left one (the file browser's "up")
+    left2_icon = nil,
+    left2_icon_size_ratio = 0.6,
+    left2_icon_tap_callback = function() end,
+    left2_icon_hold_callback = function() end,
+    left2_icon_allow_flash = true,
+    -- Kobo fork: a widget under the title (the file browser's folder strip),
+    -- see setBottomWidget(); not with info_text
+    bottom_widget = nil,
     right_icon = nil,
     right_icon_size_ratio = 0.6,
     right_icon_rotation_angle = 0,
@@ -99,6 +108,7 @@ function TitleBar:init()
 
     local left_icon_size = Screen:scaleBySize(DGENERIC_ICON_SIZE * self.left_icon_size_ratio)
     local right_icon_size = Screen:scaleBySize(DGENERIC_ICON_SIZE * self.right_icon_size_ratio)
+    local left2_icon_size = Screen:scaleBySize(DGENERIC_ICON_SIZE * self.left2_icon_size_ratio)
     self.has_left_icon = false
     self.has_right_icon = false
 
@@ -108,6 +118,9 @@ function TitleBar:init()
     if self.left_icon then
         self.has_left_icon = true
         left_icon_reserved_width = left_icon_size + self.button_padding
+        if self.left2_icon then
+            left_icon_reserved_width = left_icon_reserved_width + left2_icon_size + 2 * self.button_padding
+        end
     end
     if self.right_icon then
         self.has_right_icon = true
@@ -360,7 +373,8 @@ function TitleBar:init()
             width = left_icon_size,
             height = left_icon_size,
             padding = self.button_padding,
-            padding_right = 2 * left_icon_size, -- extend button tap zone
+            -- extend button tap zone (up to the second icon if there is one)
+            padding_right = self.left2_icon and self.button_padding or 2 * left_icon_size,
             padding_bottom = left_icon_size,
             overlap_align = "left",
             callback = self.left_icon_tap_callback,
@@ -369,6 +383,22 @@ function TitleBar:init()
             show_parent = self.show_parent,
         }
         table.insert(self, self.left_button)
+        if self.left2_icon then
+            self.left2_button = IconButton:new{
+                icon = self.left2_icon,
+                width = left2_icon_size,
+                height = left2_icon_size,
+                padding = self.button_padding,
+                padding_right = 2 * left2_icon_size, -- extend button tap zone
+                padding_bottom = left2_icon_size,
+                overlap_offset = { left_icon_size + 2 * self.button_padding, 0 },
+                callback = self.left2_icon_tap_callback,
+                hold_callback = self.left2_icon_hold_callback,
+                allow_flash = self.left2_icon_allow_flash,
+                show_parent = self.show_parent,
+            }
+            table.insert(self, self.left2_button)
+        end
     end
     if self.has_right_icon then
         self.right_button = IconButton:new{
@@ -390,6 +420,37 @@ function TitleBar:init()
 
     -- Call our base class's init (especially since OverlapGroup has very peculiar self.dimen semantics...)
     OverlapGroup.init(self)
+
+    self._base_titlebar_height = self.titlebar_height
+    if self.bottom_widget then
+        local widget = self.bottom_widget
+        self.bottom_widget = nil
+        self:setBottomWidget(widget)
+    end
+end
+
+-- Kobo fork: put a widget under the title (nil removes it). The title bar
+-- grows by its height; menus pick that up on their next layout.
+function TitleBar:setBottomWidget(widget)
+    if self.bottom_widget then
+        for i, w in ipairs(self) do
+            if w == self.bottom_widget then
+                table.remove(self, i)
+                break
+            end
+        end
+        self.bottom_widget:free()
+    end
+    self.bottom_widget = widget
+    self.titlebar_height = self._base_titlebar_height
+    if widget then
+        widget.overlap_offset = { 0, self.titlebar_height }
+        -- first, so its taps win over the buttons' extended tap zones
+        table.insert(self, 1, widget)
+        self.titlebar_height = self.titlebar_height + widget:getSize().h
+    end
+    self.dimen.h = self.titlebar_height
+    self._size.h = self.titlebar_height
 end
 
 function TitleBar:paintTo(bb, x, y)
@@ -473,6 +534,9 @@ function TitleBar:generateHorizontalLayout()
     if self.left_button then
         table.insert(row, self.left_button)
     end
+    if self.left2_button then
+        table.insert(row, self.left2_button)
+    end
     if self.right_button then
         table.insert(row, self.right_button)
     end
@@ -487,6 +551,9 @@ function TitleBar:generateVerticalLayout()
     local layout = {}
     if self.left_button then
         table.insert(layout, {self.left_button})
+    end
+    if self.left2_button then
+        table.insert(layout, {self.left2_button})
     end
     if self.right_button then
         table.insert(layout, {self.right_button})

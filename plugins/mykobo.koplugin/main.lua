@@ -16,19 +16,30 @@ don't keep Wi-Fi on.
 First run (once): turns off the speed-reading plugin, and puts the quick
 menu on a long-press of the top-left corner (if nothing is there yet).
 
+Books folder (once, in the file browser): the books at the top of the home
+folder move into Books/, the way the file browser's own Cut and Paste moves
+them (reading positions, history, collections), and downloads (OPDS,
+KoboHub's Calibre) go to Books/ from then on.
+
 @module koplugin.mykobo
 --]]--
 
 local DataStorage = require("datastorage")
 local Device = require("device")
 local Dispatcher = require("dispatcher")
+local DocSettings = require("docsettings")
+local DocumentRegistry = require("document/documentregistry")
 local InfoMessage = require("ui/widget/infomessage")
 local LuaSettings = require("luasettings")
 local NetworkMgr = require("ui/network/manager")
 local PluginShare = require("pluginshare")
+local ReadCollection = require("readcollection")
+local ReadHistory = require("readhistory")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
+local util = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
@@ -190,6 +201,47 @@ local function firstRun(ui)
     G_reader_settings:flush()
 end
 
+-- Once, in the file browser: the books at the top of home move into Books/.
+local function booksFolder(ui)
+    if G_reader_settings:readSetting("kobo_books_folder") or not ui.file_chooser then return end
+    local home = G_reader_settings:readSetting("home_dir") or Device.home_dir
+    if not home or lfs.attributes(home, "mode") ~= "directory" then return end
+    local books = home .. "/Books"
+    util.makePath(books)
+    local moved, n = {}, 0
+    local lastfile = G_reader_settings:readSetting("lastfile")
+    for f in lfs.dir(home) do
+        local path = home .. "/" .. f
+        local new_path = books .. "/" .. f
+        if f:sub(1, 1) ~= "." and lfs.attributes(path, "mode") == "file"
+                and ui.file_chooser:show_file(f) and DocumentRegistry:hasProvider(path)
+                and not lfs.attributes(new_path, "mode") then
+            if os.rename(path, new_path) then
+                DocSettings.updateLocation(path, new_path)
+                moved[path] = true
+                n = n + 1
+                if lastfile == path then
+                    G_reader_settings:saveSetting("lastfile", new_path)
+                end
+            else
+                logger.warn("mykobo: could not move", path)
+            end
+        end
+    end
+    if n > 0 then
+        ReadHistory:updateItems(moved, books)
+        ReadCollection:updateItems(moved, books)
+    end
+    if not G_reader_settings:readSetting("download_dir") then
+        G_reader_settings:saveSetting("download_dir", books)
+    end
+    G_reader_settings:saveSetting("kobo_books_folder", 1)
+    G_reader_settings:flush()
+    logger.info("mykobo: moved", n, "books into", books)
+    ui.file_chooser:refreshPath()
+    toast(T(_("%1 books moved into the Books folder."), n), 4)
+end
+
 local MyKobo = WidgetContainer:extend{
     name = "mykobo",
     is_doc_only = false,
@@ -220,6 +272,7 @@ function MyKobo:init()
     self.ui.menu:registerToMainMenu(self)
     UIManager:nextTick(function()
         firstRun(self.ui)
+        booksFolder(self.ui)
         applyDev()
         if NetworkMgr:isWifiOn() and not state.idle_task then startIdleCheck() end
     end)
