@@ -344,7 +344,7 @@ left to right or reverse, top to bottom or reverse.]]),
                 name_text = _("View Mode"),
                 toggle = {C_("View mode", "page"), C_("View mode", "continuous")},
                 values = {0, 1},
-                default_value = 1,
+                default_value = 0, -- Kobo fork: page (stock: continuous, where each page starts lower than the last)
                 event = "SetScrollMode",
                 args = {false, true},
                 name_text_hold_callback = optionsutil.showValues,
