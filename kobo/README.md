@@ -38,6 +38,8 @@ Base: **v2026.03** (`KOREADER_BASE` in kobo/install.sh).
   Kobo's `fonts` folder is hidden. Once, mykobo moves the books at the
   top of home into `Books/` (sidecars, history, collections) and points
   downloads there.
+- **PDFs open in page view** (`koptoptions.lua`, stock: continuous, where
+  every page turn starts lower on the page).
 
 Third-party plugins on the Kobo: **Solitaire**,
 github.com/Lalocaballero/solitaire.koplugin (MIT; installed at commit
