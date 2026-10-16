@@ -31,6 +31,13 @@ Base: **v2026.03** (`KOREADER_BASE` in kobo/install.sh).
   and book close (over a minute with no network in reach). Now waking
   starts Wi-Fi in the background and pulls when it connects; sleep and
   closing a book push only when already online.
+- **File browser**: folders are a strip of labelled buttons under the
+  title bar (`filemanagerfolderstrip.lua`; by name, 3 rows, then "N
+  more"), books alone fill the grid; no "../" tile, a ⌃ button beside
+  the House instead (TitleBar `left2_icon`, `setBottomWidget`); the
+  Kobo's `fonts` folder is hidden. Once, mykobo moves the books at the
+  top of home into `Books/` (sidecars, history, collections) and points
+  downloads there.
 
 Third-party plugins on the Kobo: **Solitaire**,
 github.com/Lalocaballero/solitaire.koplugin (MIT; installed at commit
