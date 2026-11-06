@@ -49,10 +49,11 @@ Base: **v2026.03** (`KOREADER_BASE` in kobo/install.sh).
   book* (Books comes up); **Book** = contents, bookmarks, Style, book
   status and information, go to; **Search**; **Settings** = status bar,
   page turns, scrolling, long-press, links, reading statistics, export,
-  read timer, *Settings…* (the Settings app) and *Everything else ▸*, which
-  holds all the rest (network, screen, gestures, device, file browser,
-  History, collections, My Kobo, Tools, USB, update, help), so nothing is
-  lost and the Settings app finds every item. The file browser's menu is
+  read timer, *Settings…* (the Settings app). Everything else (network,
+  screen, gestures, device, file browser, History, collections, My Kobo,
+  Tools, USB, update, help) is still built into the menu as the submenu
+  `kobo_everything`, but mykobo takes it out of sight once the menu is built
+  (`menu.kobo_hidden`), where the Settings app finds its items. The file browser's menu is
   unchanged.
 - **History** has the apps' title bar (`standard_title_bar` in BookList:
   the X the size of Chess's); its X goes Home, and a swipe down from the

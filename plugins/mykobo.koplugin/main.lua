@@ -274,7 +274,31 @@ function MyKobo:refreshHeader()
     end
 end
 
+-- In a book, "Everything else" (the settings that are not about reading)
+-- is built into the menu but taken out of sight: the Settings app finds its
+-- items there (menu.kobo_hidden), the Reader's menu does not show it.
+local function hideEverythingElse(menu)
+    for __, tab in ipairs(menu.tab_item_table or {}) do
+        for i = #tab, 1, -1 do
+            if type(tab[i]) == "table" and tab[i].id == "kobo_everything" then
+                menu.kobo_hidden = table.remove(tab, i)
+            end
+        end
+    end
+end
+
 function MyKobo:init()
+    local menu = self.ui.menu
+    if self.ui.document and menu and menu.setUpdateItemTable and not menu.kobo_hide_wrapped then
+        menu.kobo_hide_wrapped = true
+        local build = menu.setUpdateItemTable
+        menu.setUpdateItemTable = function(m, ...)
+            local ret = build(m, ...)
+            hideEverythingElse(m)
+            return ret
+        end
+        if menu.tab_item_table then hideEverythingElse(menu) end
+    end
     if self.ui.crelistener then
         self.ui.crelistener:addAdditionalHeaderContent(wifiHeader)
     end
