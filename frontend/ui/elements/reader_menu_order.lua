@@ -20,6 +20,9 @@ local order = {
         "bookmark_browsing_mode",
         "typeset", -- Kobo fork: the Style tab, as a submenu of Book
         "----------------------------",
+        "book_status", -- Kobo fork: from Menu (step 4)
+        "book_info",
+        "----------------------------",
         "navi_settings",
         "----------------------------",
         "hide_nonlinear_flows",
@@ -71,20 +74,20 @@ local order = {
         "start_content_selection", -- if Device:hasDPad(), put this as last one so it is easy to select with "press" and "up" keys
     },
     setting = {
-        -- common settings
-        -- those that don't exist will simply be skipped during menu gen
-        -- Kobo fork: no "frontlight" here, it is Menu > Light (hold: brightness);
-        -- night_mode is in Menu, under Light
-        "network",
-        "screen",
-        "----------------------------",
-        "taps_and_gestures", -- if Device:isTouchDevice()
-        "navigation",
-        "document",
-        "----------------------------",
-        "device",
-        "----------------------------",
         "status_bar",
+        "----------------------------",
+        "page_turns",
+        "scrolling",
+        "long_press",
+        "follow_links",
+        "----------------------------",
+        "statistics",
+        "exporter",
+        "read_timer",
+        "doc_setting_tweak",
+        "----------------------------",
+        "kobo_settings_app",
+        "kobo_everything",
     },
     document = {
         "document_metadata_location",
@@ -167,12 +170,8 @@ local order = {
         "ignore_hold_corners",
         "screen_disable_double_tap",
         "----------------------------",
-        "follow_links",
         "----------------------------",
         "menu_activate",
-        "page_turns",
-        "scrolling",
-        "long_press",
     },
     -- Kobo fork: every tool in one list, A-Z by name, in Menu > Tools
     more_tools = {
@@ -180,19 +179,15 @@ local order = {
         "battery_statistics",
         "book_shortcuts",
         "calibre",
-        "exporter",
         "keep_alive",
         "move_to_archive",
         "news_downloader",
         "profiles",
         "progress_sync",
         "qrclipboard",
-        "read_timer",
-        "statistics",
         "synchronize_time",
         "terminal",
         "text_editor",
-        "doc_setting_tweak",
         "wallabag",
         "----------------------------",
         "plugin_management",
@@ -200,6 +195,9 @@ local order = {
         "advanced_settings",
         "developer_options",
     },
+    -- Kobo fork (step 4 of KoboLauncher/PROPOSAL.md): the reader's tabs are
+    -- for reading; everything else is under Settings > Everything else,
+    -- where the Settings app also finds it.
     -- Kobo fork: Menu > My Kobo
     my_kobo = {
         "learnmode",
@@ -210,6 +208,30 @@ local order = {
         "solitaire", -- github.com/Lalocaballero/solitaire.koplugin
         "----------------------------",
         "launcher_at_start",
+    },
+    kobo_everything = {
+        "network",
+        "screen",
+        "----------------------------",
+        "taps_and_gestures",
+        "navigation",
+        "document",
+        "----------------------------",
+        "device",
+        "----------------------------",
+        "open_file_browser",
+        "history",
+        "open_previous_document",
+        "favorites",
+        "collections",
+        "bookmark_browser",
+        "----------------------------",
+        "my_kobo",
+        "more_tools",
+        "----------------------------",
+        "mass_storage_actions",
+        "ota_update",
+        "help",
     },
     search = {
         "search_settings",
@@ -236,7 +258,6 @@ local order = {
         "fulltext_search_settings",
     },
     main = {
-        -- Kobo fork: the device menu's items (kobo_devicemenu), then the reader's
         "kobo_light",
         "kobo_night_mode",
         "----------------------------",
@@ -246,21 +267,7 @@ local order = {
         "kobo_dev_mode",
         "----------------------------",
         "kobo_home",
-        "open_file_browser",
-        "history",
-        "open_previous_document",
-        "favorites",
-        "collections",
-        "bookmark_browser",
-        "----------------------------",
-        "my_kobo",
-        "more_tools",
-        "book_status",
-        "book_info",
-        "----------------------------",
-        "mass_storage_actions",
-        "ota_update",
-        "help",
+        "kobo_close_book",
         "----------------------------",
         "kobo_go_to_kobo",
         "kobo_sleep",

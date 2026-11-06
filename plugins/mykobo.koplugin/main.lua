@@ -312,6 +312,26 @@ function MyKobo:onToggleDevMode()
 end
 
 function MyKobo:addToMainMenu(menu_items)
+    -- in a book (step 4): close it (Books comes up), the Settings app, and
+    -- the submenu holding everything that is not about reading
+    if self.ui.document then
+        menu_items.kobo_close_book = {
+            text = _("Close book"),
+            callback = function()
+                local file = self.ui.document.file
+                self.ui:onClose()
+                self.ui:showFileManager(file)
+            end,
+        }
+        menu_items.kobo_settings_app = {
+            text = _("Settings…"),
+            help_text = _("The Kobo's settings, in groups."),
+            callback = function()
+                UIManager:broadcastEvent(require("ui/event"):new("KoboSettingsShow"))
+            end,
+        }
+        menu_items.kobo_everything = { text = _("Everything else") }
+    end
     -- the device menu's items, for KOReader's own Menu tab (kobo_<key>)
     local ok, DeviceMenu = pcall(require, "kobo_devicemenu")
     if ok then

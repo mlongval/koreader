@@ -44,6 +44,16 @@ Base: **v2026.03** (`KOREADER_BASE` in kobo/install.sh).
   as the Reader's own gestures do (it sends KOReader's ChangeFlIntensity).
   Apps call `DeviceMenu.handleSwipe(ges, opts)` (menu or light) from their
   swipe handler.
+- **In a book, the menu is for reading** (step 4 of
+  KoboLauncher/PROPOSAL.md): **Menu** = the device items, Home, *Close
+  book* (Books comes up); **Book** = contents, bookmarks, Style, book
+  status and information, go to; **Search**; **Settings** = status bar,
+  page turns, scrolling, long-press, links, reading statistics, export,
+  read timer, *Settings…* (the Settings app) and *Everything else ▸*, which
+  holds all the rest (network, screen, gestures, device, file browser,
+  History, collections, My Kobo, Tools, USB, update, help), so nothing is
+  lost and the Settings app finds every item. The file browser's menu is
+  unchanged.
 - **History** has the apps' title bar (`standard_title_bar` in BookList:
   the X the size of Chess's); its X goes Home, and a swipe down from the
   top opens the device menu (stock: it closed History).
