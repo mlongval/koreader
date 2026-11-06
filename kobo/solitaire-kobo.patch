@@ -1,0 +1,323 @@
+--- a/solitaireui.lua
++++ b/solitaireui.lua
+@@ -1,4 +1,6 @@
+ local Blitbuffer = require("ffi/blitbuffer")
++local Button = require("ui/widget/button")
++local ButtonDialog = require("ui/widget/buttondialog")
+ local ButtonTable = require("ui/widget/buttontable")
+ local CenterContainer = require("ui/widget/container/centercontainer")
+ local Device = require("device")
+@@ -6,12 +8,16 @@
+ local FrameContainer = require("ui/widget/container/framecontainer")
+ local Geom = require("ui/geometry")
+ local GestureRange = require("ui/gesturerange")
++local HorizontalGroup = require("ui/widget/horizontalgroup")
++local HorizontalSpan = require("ui/widget/horizontalspan")
+ local InfoMessage = require("ui/widget/infomessage")
+ local InputContainer = require("ui/widget/container/inputcontainer")
+ local Size = require("ui/size")
+ local TextWidget = require("ui/widget/textwidget")
++local TitleBar = require("ui/widget/titlebar")
+ local UIManager = require("ui/uimanager")
+ local VerticalGroup = require("ui/widget/verticalgroup")
++local VerticalSpan = require("ui/widget/verticalspan")
+ local WidgetContainer = require("ui/widget/container/widgetcontainer")
+ local DataStorage = require("datastorage")
+ local LuaSettings = require("luasettings")
+@@ -23,7 +29,7 @@
+ 
+ local SolitaireUI = InputContainer:extend{
+     name = "solitaire_ui",
+-    modal = true,
++    modal = false, -- Kobo fork: the device menu and its dialogs must be able to go above it
+     covers_fullscreen = true,
+ }
+ 
+@@ -115,6 +121,20 @@
+                     range = self.dimen,
+                 }
+             },
++            -- Kobo fork: double tap (when KOReader reports it) sends a card up
++            DoubleTap = {
++                GestureRange:new{
++                    ges = "double_tap",
++                    range = self.dimen,
++                }
++            },
++            -- Kobo fork: a swipe down from the top opens the device menu
++            Swipe = {
++                GestureRange:new{
++                    ges = "swipe",
++                    range = self.dimen,
++                }
++            },
+         }
+     end
+ 
+@@ -186,74 +206,63 @@
+     os.remove(self.save_path)
+ end
+ 
++-- Kobo fork: laid out like KoboChess -- a title bar with X (quit), a bold
++-- status line, the cards, then one row of framed buttons with the menus
++-- (Game ▾, Options ▾) at either end.
+ function SolitaireUI:buildUI()
+     self.touch_zones = {}
++    local margin = Size.padding.large
++    local span = Size.padding.default
++    local draw_mode_label = self.game.draw_mode == 3 and _("Draw 3") or _("Draw 1")
+ 
+-    local game_area_height = self.screen_height - self.status_bar_height - self.button_bar_height
+-    self:updateLayoutMetrics(game_area_height)
+-
+-    -- Draw mode label
+-    local draw_mode_label = self.game.draw_mode == 3 and "D3" or "D1"
+-
+-    local button_bar = ButtonTable:new{
++    local title_bar = TitleBar:new{
+         width = self.screen_width,
+-        buttons = {
+-            {
+-                {
+-                    text = _("New"),
+-                    callback = function() self:newGame() end,
+-                },
+-                {
+-                    text = _("Undo"),
+-                    callback = function() self:undoMove() end,
+-                    enabled = self.game:canUndo(),
+-                },
+-                {
+-                    text = _("Hint"),
+-                    callback = function() self:showHint() end,
+-                },
+-                {
+-                    text = _("Auto"),
+-                    callback = function() self:autoMove() end,
+-                },
+-                {
+-                    text = _(draw_mode_label),
+-                    callback = function() self:toggleDrawMode() end,
+-                },
+-                {
+-                    text = _("More"),
+-                    callback = function() self:showMoreMenu() end,
+-                },
+-                {
+-                    text = _("Close"),
+-                    callback = function() self:onClose() end,
+-                },
+-            },
+-        },
++        fullscreen = true,
++        align = "center",
++        title = _("Solitaire"),
++        with_bottom_line = true,
++        close_callback = function() self:onClose() end,
+         show_parent = self,
+     }
++    local status = TextWidget:new{
++        text = string.format("%s %d  ·  %s %d  ·  %s  ·  %s  ·  %s %d",
++            _("Moves"), self.game.moves, _("Score"), self.game.score,
++            self.game:formatTime(), draw_mode_label, _("Stock"), #self.game.stock),
++        face = Font:getFace("cfont", 20),
++        bold = true,
++        max_width = self.screen_width - 2 * margin,
++    }
++    local header = VerticalGroup:new{
++        align = "center",
++        title_bar,
++        VerticalSpan:new{ width = span },
++        CenterContainer:new{
++            dimen = Geom:new{ w = self.screen_width, h = status:getSize().h },
++            status,
++        },
++        VerticalSpan:new{ width = span },
++    }
++    -- the card layout uses this as the height above the cards
++    self.status_bar_height = header:getSize().h
+ 
++    local row = self:buttonRow({
++        { text = _("Game ▾"), callback = function() self:showGameMenu() end },
++        { text = _("Undo"), enabled = self.game:canUndo(), callback = function() self:undoMove() end },
++        { text = _("Hint"), callback = function() self:showHint() end },
++        { text = _("Auto"), callback = function() self:autoMove() end },
++        { text = _("Refresh"), callback = function() UIManager:setDirty(self, "full") end },
++        { text = _("Options ▾"), callback = function() self:showOptionsMenu() end },
++    }, margin)
++    local button_bar = VerticalGroup:new{
++        align = "center",
++        VerticalSpan:new{ width = span },
++        CenterContainer:new{ dimen = Geom:new{ w = self.screen_width, h = row:getSize().h }, row },
++        VerticalSpan:new{ width = span },
++    }
+     self.button_bar_height = button_bar:getSize().h
+-    game_area_height = self.screen_height - self.status_bar_height - self.button_bar_height
++    local game_area_height = self.screen_height - self.status_bar_height - self.button_bar_height
+     self:updateLayoutMetrics(game_area_height)
+ 
+-    local time_str = self.game:formatTime()
+-    local status_text = string.format("M:%d  S:%d  %s  %s  Stock:%d  Waste:%d",
+-        self.game.moves, self.game.score, time_str, draw_mode_label,
+-        #self.game.stock, #self.game.waste)
+-
+-    local status_bar = FrameContainer:new{
+-        width = self.screen_width,
+-        height = self.status_bar_height,
+-        bordersize = 0,
+-        padding = 5,
+-        background = Blitbuffer.COLOR_LIGHT_GRAY,
+-        CenterContainer:new{
+-            dimen = Geom:new{w = self.screen_width - 10, h = self.status_bar_height - 10},
+-            self:statusText(status_text, self.screen_width - 30, self.status_bar_height - 10),
+-        }
+-    }
+-
+     local game_area = WidgetContainer:new{
+         dimen = Geom:new{
+             w = self.screen_width,
+@@ -273,13 +282,67 @@
+         padding = 0,
+         VerticalGroup:new{
+             align = "left",
+-            status_bar,
++            header,
+             game_area,
+             button_bar,
+         }
+     }
+ end
+ 
++-- Framed buttons of equal width across the screen (as KoboChess's).
++function SolitaireUI:buttonRow(specs, margin)
++    local gap = Size.padding.default
++    local width = math.floor((self.screen_width - 2 * margin - gap * (#specs - 1)) / #specs)
++    local group = HorizontalGroup:new{ align = "center" }
++    for i, spec in ipairs(specs) do
++        table.insert(group, Button:new{
++            text = spec.text,
++            width = width,
++            enabled = spec.enabled ~= false,
++            callback = spec.callback,
++            show_parent = self,
++        })
++        if i < #specs then table.insert(group, HorizontalSpan:new{ width = gap }) end
++    end
++    return group
++end
++
++-- A menu as KoboChess shows them: a titled list of buttons.
++function SolitaireUI:showMenu(title, entries)
++    local dialog
++    local buttons = {}
++    for __, entry in ipairs(entries) do
++        table.insert(buttons, { {
++            text = entry.text,
++            callback = function()
++                UIManager:close(dialog)
++                entry.callback()
++            end,
++        } })
++    end
++    dialog = ButtonDialog:new{ title = title, title_align = "center", buttons = buttons }
++    UIManager:show(dialog)
++end
++
++function SolitaireUI:showGameMenu()
++    self:showMenu(_("Game"), {
++        { text = _("New game"), callback = function() self:newGame() end },
++        { text = _("Statistics"), callback = function() self:showStats() end },
++        { text = _("Leaderboard"), callback = function() self:showLeaderboard() end },
++        { text = _("Reset statistics"), callback = function() self:confirmResetStats() end },
++    })
++end
++
++function SolitaireUI:showOptionsMenu()
++    local three = self.game.draw_mode == 3
++    self:showMenu(_("Options"), {
++        { text = (three and "" or "✓ ") .. _("Draw 1 card"),
++          callback = function() if three then self:toggleDrawMode() end end },
++        { text = (three and "✓ " or "") .. _("Draw 3 cards"),
++          callback = function() if not three then self:toggleDrawMode() end end },
++    })
++end
++
+ -- The status line in the largest font that fits the bar (about half its
+ -- height), made smaller until the whole line fits across the screen.
+ -- Font:getFace scales sizes by the screen's DPI itself.
+@@ -577,10 +640,53 @@
+     return nil
+ end
+ 
++-- Kobo fork: the top card of the waste or of a column onto its suit's pile
++-- (an Ace, or the next card of a started suit). True if it went.
++function SolitaireUI:sendToFoundation(zone)
++    if not zone then return false end
++    local idx
++    if zone.type == "tableau" then
++        local col = self.game.tableau[zone.index]
++        if not col or zone.card_pos ~= #col then return false end
++        idx = zone.index
++    elseif zone.type ~= "waste" then
++        return false
++    end
++    for f = 1, 4 do
++        if self.game:moveToFoundation(zone.type, idx, f) then
++            self.game_started = true
++            self.selected_source = nil
++            self.hint_highlight = nil
++            self:saveGame()
++            if self.game:checkWin() then self:showWinMessage() end
++            self:refreshUI()
++            return true
++        end
++    end
++    return false
++end
++
++function SolitaireUI:onDoubleTap(arg, ges)
++    self:sendToFoundation(self:findTouchZone(ges.pos.x, ges.pos.y))
++    return true
++end
++
+ function SolitaireUI:onTap(arg, ges)
+     local pos = ges.pos
+     local zone = self:findTouchZone(pos.x, pos.y)
+ 
++    -- Kobo fork: two taps on the same card within 0.6 s send it up, if it can go
++    if zone and (zone.type == "waste" or zone.type == "tableau") then
++        local time = require("ui/time")
++        local key = zone.type .. ":" .. tostring(zone.index) .. ":" .. tostring(zone.card_pos)
++        local last = self.last_tap
++        self.last_tap = { key = key, t = time.now() }
++        if last and last.key == key and time.now() - last.t < time.s(0.6) then
++            self.last_tap = nil
++            if self:sendToFoundation(zone) then return true end
++        end
++    end
++
+     if not zone then
+         self.selected_source = nil
+         self:refreshUI()
+@@ -963,6 +1069,21 @@
+     })
+ end
+ 
++-- Kobo fork: the device menu (mykobo.koplugin's kobo_devicemenu), if there.
++function SolitaireUI:onSwipe(arg, ges)
++    local ok, DeviceMenu = pcall(require, "kobo_devicemenu")
++    if not (ok and DeviceMenu.isTopSwipe(ges)) then return false end
++    DeviceMenu.show{
++        title = _("Solitaire"),
++        items = {
++            { text = _("Quit Solitaire"), callback = function() self:onClose() end },
++        },
++        close_app = function() self:onClose() end,
++        on_close = function() UIManager:setDirty(self, "full") end,
++    }
++    return true
++end
++
+ function SolitaireUI:onClose()
+     self.game:stopTimer()
+     if self.game:checkWin() then

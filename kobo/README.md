@@ -57,8 +57,11 @@ github.com/Lalocaballero/solitaire.koplugin (MIT; installed at commit
 folder): on the Elipsa the status line was cut off and the rank
 and suit symbols too big; now the status line fits the bar and the
 screen width, and the symbols are about half their old size.
-Then `solitaire-devicemenu.patch` (after the sizes patch): a swipe down
-from the top opens the device menu (with "Quit Solitaire"), and the game
+Then `solitaire-kobo.patch` (after the sizes patch): laid out like
+KoboChess (title bar with an X to quit, a bold status line, one row of
+framed buttons: Game ▾, Undo, Hint, Auto, Refresh, Options ▾); double tap
+a top card to send it to its suit's pile (an Ace, or the next of a started
+suit); a swipe down from the top opens the device menu; and the game
 window is no longer modal, so the menu and its dialogs can go above it. MenuSorter now puts a plugin
 whose sorting hint names a menu this fork lacks (e.g. "tools") in Menu >
 Tools instead of failing.
