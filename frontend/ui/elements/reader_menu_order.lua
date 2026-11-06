@@ -203,9 +203,11 @@ local order = {
         "learnmode",
         "readiteventually",
         "kobohub",
+        "notan", -- Projects/Notan
         "kobochess",
         "solitaire", -- github.com/Lalocaballero/solitaire.koplugin
         "----------------------------",
+        "launcher_at_start",
         "dev_mode",
     },
     search = {
@@ -233,6 +235,7 @@ local order = {
         "fulltext_search_settings",
     },
     main = {
+        "launcher", -- Kobo fork: Home (launcher.koplugin, Projects/KoboLauncher)
         "light_toggle",
         "night_mode", -- Kobo fork: moved from Settings
         "network_panel",

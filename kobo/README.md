@@ -17,8 +17,10 @@ Base: **v2026.03** (`KOREADER_BASE` in kobo/install.sh).
 - **Hold Menu** = light on/off (the tab shows ☀ when on); **hold
   Settings** = network panel (from tailscale.koplugin; the tab shows ◦
   for Wi-Fi, ● for Tailscale, DEV in Dev mode).
-- **Menu** holds Light, Network, File browser, History…, **My Kobo**
-  (Learning languages, ReadItEventually, KoboHub, Chess, Dev mode),
+- **Menu** holds **Home** (the Launcher, github.com/mlongval/KoboLauncher),
+  Light, Network, File browser, History…, **My Kobo**
+  (Learning languages, ReadItEventually, KoboHub, Notan, Chess, Solitaire,
+  Home screen when KOReader starts, Dev mode),
   **Tools** (every tool A–Z; was the Tools tab + More tools), Book
   status/information, Help (Menu search first), Exit.
   `ui/elements/reader_menu_order.lua`, `filemanager_menu_order.lua`.
