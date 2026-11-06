@@ -60,6 +60,7 @@ function FileManagerHistory:onShowHist(search_info)
     -- This may be hijacked by CoverBrowser plugin and needs to be known as booklist_menu.
     self.booklist_menu = BookList:new{
         name = "history",
+        standard_title_bar = true, -- Kobo fork
         title_bar_left_icon = "appbar.menu",
         onLeftButtonTap = function() self:showHistDialog() end,
         onMenuSelect = self.onMenuSelect,
@@ -78,6 +79,30 @@ function FileManagerHistory:onShowHist(search_info)
         self.booklist_menu = nil
         self.statuses_fetched = nil
         G_reader_settings:saveSetting("history_filter", self.filter)
+    end
+    -- Kobo fork: the X (and Back) go Home when there is a Home; a swipe down
+    -- from the top opens the device menu instead of closing History.
+    local menu = self.booklist_menu
+    local close = menu.onClose
+    menu.onClose = function(m)
+        local ret = close(m)
+        if self.ui.launcher then
+            UIManager:broadcastEvent(require("ui/event"):new("LauncherShow"))
+        end
+        return ret
+    end
+    local swipe = menu.onSwipe
+    menu.onSwipe = function(m, arg, ges)
+        local ok, DeviceMenu = pcall(require, "kobo_devicemenu")
+        if ok and DeviceMenu.isTopSwipe(ges) then
+            DeviceMenu.show{
+                title = _("History"),
+                close_app = function() if m.close_callback then m.close_callback() end end,
+                on_close = function() UIManager:setDirty(m, "ui") end,
+            }
+            return true
+        end
+        return swipe(m, arg, ges)
     end
 
     if search_info then

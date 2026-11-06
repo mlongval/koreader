@@ -312,6 +312,13 @@ function MyKobo:onToggleDevMode()
 end
 
 function MyKobo:addToMainMenu(menu_items)
+    -- the device menu's items, for KOReader's own Menu tab (kobo_<key>)
+    local ok, DeviceMenu = pcall(require, "kobo_devicemenu")
+    if ok then
+        for __, e in ipairs(DeviceMenu.entries{ ui = self.ui }) do
+            if e.key then menu_items["kobo_" .. e.key] = e.item end
+        end
+    end
     menu_items.dev_mode = {
         text_func = function()
             if devOn() then

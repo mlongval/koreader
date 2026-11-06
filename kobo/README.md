@@ -29,12 +29,19 @@ Base: **v2026.03** (`KOREADER_BASE` in kobo/install.sh).
   itself after 3 h), Wi-Fi off after 10 min unused, first-run settings
   (speed-reading plugin off, quick menu on hold top-left corner).
 - **The device menu** (`plugins/mykobo.koplugin/kobo_devicemenu.lua`): one
-  drop-down for the Kobo apps (Launcher, Notan, Chess, Solitaire), opened by a swipe
-  down from the top edge (on the Launcher also a tap on the clock). The
-  app's own items, then Light (hold: brightness), Brightness and warmth,
-  Night mode, Wi-Fi, Network panel, Check KoboHub now, Dev mode, Home,
-  Sleep, Restart KOReader, Reboot, Shut down (both ask first), Leave KOReader. The tab shows the app, the time
-  and the battery. An app uses it with `pcall(require, "kobo_devicemenu")`.
+  list for the whole system, opened by a swipe down from the top edge in
+  every app (Home, Notan, Chess, Solitaire, History; on Home also a tap on
+  the clock), and shown as the first items of KOReader's own Menu tab
+  (mykobo registers them as `kobo_<key>`; the old Light, Night mode,
+  Network, Home and Exit entries are hidden). Order: the app's own items ·
+  Light (hold: brightness), Night mode · Wi-Fi, Network…, Check KoboHub,
+  Dev mode · Home, Go to Kobo · Sleep, Restart KOReader, Restart Kobo, Shut
+  down Kobo (the last three and Go to Kobo ask first). The tab shows the
+  app, the time and the battery. An app uses it with
+  `pcall(require, "kobo_devicemenu")`.
+- **History** has the apps' title bar (`standard_title_bar` in BookList:
+  the X the size of Chess's); its X goes Home, and a swipe down from the
+  top opens the device menu (stock: it closed History).
 - **Progress sync never makes you wait** (`plugins/kosync.koplugin`):
   stock auto sync turns Wi-Fi on and waits for it on every wake, sleep
   and book close (over a minute with no network in reach). Now waking

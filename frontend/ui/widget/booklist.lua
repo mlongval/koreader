@@ -253,7 +253,8 @@ BookList.collates = {
 }
 
 function BookList:init()
-    self.title_bar_fm_style = not self.custom_title_bar
+    -- Kobo fork: standard_title_bar = the apps' title bar (X the same size as in Chess, Notan…)
+    self.title_bar_fm_style = not self.custom_title_bar and not self.standard_title_bar
     Menu.init(self)
 end
 

@@ -1,8 +1,17 @@
 --[[--
-The device menu: one drop-down for the Kobo apps (Launcher, Notan, Chess…),
-so the light, Wi-Fi, Dev mode, sleep and the rest are at hand without
-leaving the app for KOReader's own menu. It looks like KOReader's top menu
-(a TouchMenu with one tab) and opens with a swipe down from the top edge.
+The device menu: one drop-down for the whole Kobo system (Home, Books,
+Notan, Chess, Solitaire… and KOReader's own Menu tab), so the light, Wi-Fi,
+sleep and the rest are the same everywhere. It looks like KOReader's top
+menu (a TouchMenu with one tab) and opens with a swipe down from the top
+edge.
+
+Order (most used first, the drastic ones last):
+
+    the app's own items
+    Light (hold: brightness and warmth) · Night mode
+    Wi-Fi · Network… · Check KoboHub · Dev mode
+    Home · Go to Kobo
+    Sleep · Restart KOReader · Restart Kobo · Shut down Kobo
 
     local ok, DeviceMenu = pcall(require, "kobo_devicemenu")
     -- in the app's swipe handler:
@@ -14,6 +23,10 @@ leaving the app for KOReader's own menu. It looks like KOReader's top menu
         }
         return true
     end
+
+KOReader's Menu tab shows the same items: mykobo registers them as menu
+items "kobo_<key>" (DeviceMenu.entries) and the fork's menu order files
+place them.
 
 Lives in mykobo.koplugin (Kobo fork of KOReader); plugins' folders are on
 the Lua path once loaded, so any plugin can require it.
@@ -66,33 +79,42 @@ local function label(title)
     return table.concat(parts, " · ")
 end
 
-function DeviceMenu.items(opts)
-    local ui = currentUI()
-    local items = {}
-    for __, it in ipairs(opts.items or {}) do table.insert(items, it) end
-    if #items > 0 then items[#items].separator = true end
+--[[--
+The standard entries, in order: { key = "light", item = {...} } or
+{ separator = true }. Entries the device or the installed plugins cannot do
+are left out. opts.close_app: for Home, the app closes first; opts.no_home:
+leave Home out (the Launcher itself).
+--]]
+function DeviceMenu.entries(opts)
+    opts = opts or {}
+    local ui = opts.ui or currentUI()
+    local list = {}
+    local function add(key, item) table.insert(list, { key = key, item = item }) end
+    local function sep() table.insert(list, { separator = true }) end
 
+    -- Screen
     if Device:hasFrontlight() then
-        table.insert(items, {
+        add("light", {
             text = _("Light"),
+            help_text = _("Tap: on or off. Hold: brightness and warmth."),
             checked_func = function() return Device:getPowerDevice():isFrontlightOn() end,
             callback = function() broadcast("ToggleFrontlight") end,
-            hold_callback = function() broadcast("ShowFlDialog") end,
-        })
-        table.insert(items, {
-            text = _("Brightness and warmth…"),
-            callback = function() broadcast("ShowFlDialog") end,
+            hold_callback = function(touchmenu)
+                if touchmenu and touchmenu.closeMenu then touchmenu:closeMenu() end
+                broadcast("ShowFlDialog")
+            end,
         })
     end
-    table.insert(items, {
+    add("night_mode", {
         text = _("Night mode"),
         checked_func = function() return G_reader_settings:isTrue("night_mode") end,
         callback = function() broadcast("ToggleNightMode") end,
-        separator = true,
     })
+    sep()
 
+    -- Connections
     if Device:hasWifiToggle() then
-        table.insert(items, {
+        add("wifi", {
             text = _("Wi-Fi"),
             checked_func = function() return NetworkMgr:isWifiOn() end,
             callback = function()
@@ -101,19 +123,19 @@ function DeviceMenu.items(opts)
         })
     end
     if ui and ui.tailscale then
-        table.insert(items, {
-            text = _("Network panel…"),
+        add("network", {
+            text = _("Network…"),
             callback = function() broadcast("ShowNetworkPanel") end,
         })
     end
     if ui and ui.kobohub then
-        table.insert(items, {
-            text = _("Check KoboHub now"),
+        add("kobohub", {
+            text = _("Check KoboHub"),
             callback = function() broadcast("KoboHubCheckNow") end,
         })
     end
     if ui and ui.mykobo then
-        table.insert(items, {
+        add("dev_mode", {
             text_func = function()
                 if devMode() then
                     return T(_("Dev mode (until %1)"),
@@ -125,59 +147,82 @@ function DeviceMenu.items(opts)
             callback = function() broadcast("ToggleDevMode") end,
         })
     end
-    items[#items].separator = true
+    sep()
 
-    if ui and ui.launcher and opts.close_app then
-        table.insert(items, {
+    -- Go
+    if ui and ui.launcher and not opts.no_home then
+        add("home", {
             text = _("Home"),
             callback = function()
-                opts.close_app()
+                if opts.close_app then opts.close_app() end
                 broadcast("LauncherShow")
             end,
         })
     end
-    if Device:canSuspend() then
-        table.insert(items, {
-            text = _("Sleep"),
-            callback = function() UIManager:nextTick(function() UIManager:suspend() end) end,
-        })
-    end
-    if Device:canRestart() then
-        table.insert(items, {
-            text = _("Restart KOReader"),
-            callback = function() broadcast("Restart") end,
-        })
-    end
-    if Device:canReboot() then
-        table.insert(items, {
-            text = _("Reboot"),
-            keep_menu_open = true, -- the question comes over the menu; No goes back to it
-            callback = function() UIManager:askForReboot() end,
-        })
-    end
-    if Device:canPowerOff() then
-        table.insert(items, {
-            text = _("Shut down"),
-            keep_menu_open = true,
-            callback = function() UIManager:askForPowerOff() end,
-        })
-    end
     if Device:isKobo() then
-        table.insert(items, {
-            text = _("Leave KOReader for the Kobo software"),
+        add("go_to_kobo", {
+            text = _("Go to Kobo"),
+            help_text = _("Leave KOReader for the Kobo software."),
+            keep_menu_open = true,
             callback = function()
                 UIManager:show(ConfirmBox:new{
-                    text = _("Leave KOReader and go back to the Kobo software?"),
-                    ok_text = _("Leave"),
+                    text = _("Leave KOReader and go to the Kobo software?"),
+                    ok_text = _("Go to Kobo"),
                     ok_callback = function() broadcast("Exit") end,
                 })
             end,
         })
     end
+    sep()
+
+    -- Power
+    if Device:canSuspend() then
+        add("sleep", {
+            text = _("Sleep"),
+            callback = function() UIManager:nextTick(function() UIManager:suspend() end) end,
+        })
+    end
+    if Device:canRestart() then
+        add("restart_koreader", {
+            text = _("Restart KOReader"),
+            callback = function() broadcast("Restart") end,
+        })
+    end
+    if Device:canReboot() then
+        add("restart_kobo", {
+            text = _("Restart Kobo"),
+            keep_menu_open = true, -- the question comes over the menu; No goes back to it
+            callback = function() UIManager:askForReboot() end,
+        })
+    end
+    if Device:canPowerOff() then
+        add("shutdown_kobo", {
+            text = _("Shut down Kobo"),
+            keep_menu_open = true,
+            callback = function() UIManager:askForPowerOff() end,
+        })
+    end
+    return list
+end
+
+--- The TouchMenu items: the app's own first, then the standard entries.
+function DeviceMenu.items(opts)
+    opts = opts or {}
+    local items = {}
+    for __, it in ipairs(opts.items or {}) do table.insert(items, it) end
+    if #items > 0 then items[#items].separator = true end
+    for __, e in ipairs(DeviceMenu.entries(opts)) do
+        if e.separator then
+            if #items > 0 then items[#items].separator = true end
+        else
+            table.insert(items, e.item)
+        end
+    end
+    if #items > 0 then items[#items].separator = nil end
     return items
 end
 
---- Show the menu. opts: title, items (the app's own), close_app.
+--- Show the menu. opts: title, items (the app's own), close_app, no_home, on_close.
 function DeviceMenu.show(opts)
     opts = opts or {}
     local TouchMenu = require("ui/widget/touchmenu")

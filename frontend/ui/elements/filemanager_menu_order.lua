@@ -2,6 +2,8 @@ local Device = require("device")
 
 local order = {
     ["KOMenu:disabled"] = {
+        -- Kobo fork: these are the device menu's now (kobo_* in Menu)
+        "launcher", "light_toggle", "night_mode", "network_panel", "exit_menu", "dev_mode",
         "language", -- Kobo fork: the interface stays in English
         "frontlight", -- Kobo fork: Menu > Light (hold it for brightness)
     },
@@ -156,7 +158,6 @@ local order = {
         "solitaire", -- github.com/Lalocaballero/solitaire.koplugin
         "----------------------------",
         "launcher_at_start",
-        "dev_mode",
     },
     search = {
         "search_settings",
@@ -179,14 +180,18 @@ local order = {
         "wikipedia_settings",
     },
     main = {
-        "launcher", -- Kobo fork: Home (launcher.koplugin, Projects/KoboLauncher)
-        "light_toggle",
-        "night_mode", -- Kobo fork: moved from Settings
-        "network_panel",
+        -- Kobo fork: the device menu's items (kobo_devicemenu), then the browser's
+        "kobo_light",
+        "kobo_night_mode",
         "----------------------------",
+        "kobo_wifi",
+        "kobo_network",
+        "kobo_kobohub",
+        "kobo_dev_mode",
+        "----------------------------",
+        "kobo_home",
         "history",
         "open_last_document",
-        "----------------------------",
         "favorites",
         "collections",
         "bookmark_browser",
@@ -195,11 +200,14 @@ local order = {
         "more_tools",
         "----------------------------",
         "mass_storage_actions",
-        "----------------------------",
         "ota_update",
         "help",
         "----------------------------",
-        "exit_menu",
+        "kobo_go_to_kobo",
+        "kobo_sleep",
+        "kobo_restart_koreader",
+        "kobo_restart_kobo",
+        "kobo_shutdown_kobo",
     },
     help = {
         "search_menu",
