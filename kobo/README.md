@@ -33,7 +33,7 @@ Base: **v2026.03** (`KOREADER_BASE` in kobo/install.sh).
   down from the top edge (on the Launcher also a tap on the clock). The
   app's own items, then Light (hold: brightness), Brightness and warmth,
   Night mode, Wi-Fi, Network panel, Check KoboHub now, Dev mode, Home,
-  Sleep, Restart KOReader, Leave KOReader. The tab shows the app, the time
+  Sleep, Restart KOReader, Reboot, Shut down (both ask first), Leave KOReader. The tab shows the app, the time
   and the battery. An app uses it with `pcall(require, "kobo_devicemenu")`.
 - **Progress sync never makes you wait** (`plugins/kosync.koplugin`):
   stock auto sync turns Wi-Fi on and waits for it on every wake, sleep

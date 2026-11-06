@@ -148,6 +148,20 @@ function DeviceMenu.items(opts)
             callback = function() broadcast("Restart") end,
         })
     end
+    if Device:canReboot() then
+        table.insert(items, {
+            text = _("Reboot"),
+            keep_menu_open = true, -- the question comes over the menu; No goes back to it
+            callback = function() UIManager:askForReboot() end,
+        })
+    end
+    if Device:canPowerOff() then
+        table.insert(items, {
+            text = _("Shut down"),
+            keep_menu_open = true,
+            callback = function() UIManager:askForPowerOff() end,
+        })
+    end
     if Device:isKobo() then
         table.insert(items, {
             text = _("Leave KOReader for the Kobo software"),
