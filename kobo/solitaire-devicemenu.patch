@@ -1,0 +1,47 @@
+--- a/solitaireui.lua
++++ b/solitaireui.lua
+@@ -23,7 +23,7 @@
+ 
+ local SolitaireUI = InputContainer:extend{
+     name = "solitaire_ui",
+-    modal = true,
++    modal = false, -- Kobo fork: the device menu and its dialogs must be able to go above it
+     covers_fullscreen = true,
+ }
+ 
+@@ -115,6 +115,13 @@
+                     range = self.dimen,
+                 }
+             },
++            -- Kobo fork: a swipe down from the top opens the device menu
++            Swipe = {
++                GestureRange:new{
++                    ges = "swipe",
++                    range = self.dimen,
++                }
++            },
+         }
+     end
+ 
+@@ -963,6 +970,21 @@
+     })
+ end
+ 
++-- Kobo fork: the device menu (mykobo.koplugin's kobo_devicemenu), if there.
++function SolitaireUI:onSwipe(arg, ges)
++    local ok, DeviceMenu = pcall(require, "kobo_devicemenu")
++    if not (ok and DeviceMenu.isTopSwipe(ges)) then return false end
++    DeviceMenu.show{
++        title = _("Solitaire"),
++        items = {
++            { text = _("Quit Solitaire"), callback = function() self:onClose() end },
++        },
++        close_app = function() self:onClose() end,
++        on_close = function() UIManager:setDirty(self, "full") end,
++    }
++    return true
++end
++
+ function SolitaireUI:onClose()
+     self.game:stopTimer()
+     if self.game:checkWin() then

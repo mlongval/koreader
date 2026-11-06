@@ -181,7 +181,7 @@ function DeviceMenu.show(opts)
         if opts.on_close then opts.on_close() end
     end
     container[1] = menu
-    UIManager:show(container)
+    UIManager:show(container, "ui") -- (with no refresh type the e-ink screen may not change)
     return container
 end
 

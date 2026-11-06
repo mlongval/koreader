@@ -29,7 +29,7 @@ Base: **v2026.03** (`KOREADER_BASE` in kobo/install.sh).
   itself after 3 h), Wi-Fi off after 10 min unused, first-run settings
   (speed-reading plugin off, quick menu on hold top-left corner).
 - **The device menu** (`plugins/mykobo.koplugin/kobo_devicemenu.lua`): one
-  drop-down for the Kobo apps (Launcher, Notan, Chess), opened by a swipe
+  drop-down for the Kobo apps (Launcher, Notan, Chess, Solitaire), opened by a swipe
   down from the top edge (on the Launcher also a tap on the clock). The
   app's own items, then Light (hold: brightness), Brightness and warmth,
   Night mode, Wi-Fi, Network panel, Check KoboHub now, Dev mode, Home,
@@ -56,7 +56,10 @@ github.com/Lalocaballero/solitaire.koplugin (MIT; installed at commit
 `solitaire-sizes.patch` applied (`patch -p1` in the plugin
 folder): on the Elipsa the status line was cut off and the rank
 and suit symbols too big; now the status line fits the bar and the
-screen width, and the symbols are about half their old size. MenuSorter now puts a plugin
+screen width, and the symbols are about half their old size.
+Then `solitaire-devicemenu.patch` (after the sizes patch): a swipe down
+from the top opens the device menu (with "Quit Solitaire"), and the game
+window is no longer modal, so the menu and its dialogs can go above it. MenuSorter now puts a plugin
 whose sorting hint names a menu this fork lacks (e.g. "tools") in Menu >
 Tools instead of failing.
 
