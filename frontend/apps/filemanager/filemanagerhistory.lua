@@ -94,15 +94,21 @@ function FileManagerHistory:onShowHist(search_info)
     local swipe = menu.onSwipe
     menu.onSwipe = function(m, arg, ges)
         local ok, DeviceMenu = pcall(require, "kobo_devicemenu")
-        if ok and DeviceMenu.isTopSwipe(ges) then
-            DeviceMenu.show{
-                title = _("History"),
-                close_app = function() if m.close_callback then m.close_callback() end end,
-                on_close = function() UIManager:setDirty(m, "ui") end,
-            }
+        if ok and DeviceMenu.handleSwipe(ges, {
+            title = _("History"),
+            close_app = function() if m.close_callback then m.close_callback() end end,
+            on_close = function() UIManager:setDirty(m, "ui") end,
+        }) then
             return true
         end
         return swipe(m, arg, ges)
+    end
+    -- two fingers up or down: the light
+    menu.ges_events.TwoFingerSwipe = { require("ui/gesturerange"):new{
+        ges = "two_finger_swipe", range = function() return menu.dimen end } }
+    menu.onTwoFingerSwipe = function(m, arg, ges)
+        local ok, DeviceMenu = pcall(require, "kobo_devicemenu")
+        return ok and DeviceMenu.lightGesture(ges) or false
     end
 
     if search_info then

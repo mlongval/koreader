@@ -33,7 +33,7 @@
      covers_fullscreen = true,
  }
  
-@@ -115,6 +121,20 @@
+@@ -115,6 +121,27 @@
                      range = self.dimen,
                  }
              },
@@ -44,17 +44,24 @@
 +                    range = self.dimen,
 +                }
 +            },
-+            -- Kobo fork: a swipe down from the top opens the device menu
++            -- Kobo fork: a swipe down from the top opens the device menu;
++            -- up/down along the left edge, or with two fingers: the light
 +            Swipe = {
 +                GestureRange:new{
 +                    ges = "swipe",
 +                    range = self.dimen,
 +                }
 +            },
++            TwoFingerSwipe = {
++                GestureRange:new{
++                    ges = "two_finger_swipe",
++                    range = self.dimen,
++                }
++            },
          }
      end
  
-@@ -186,74 +206,63 @@
+@@ -186,74 +213,63 @@
      os.remove(self.save_path)
  end
  
@@ -176,7 +183,7 @@
      local game_area = WidgetContainer:new{
          dimen = Geom:new{
              w = self.screen_width,
-@@ -273,13 +282,67 @@
+@@ -273,13 +289,67 @@
          padding = 0,
          VerticalGroup:new{
              align = "left",
@@ -245,7 +252,7 @@
  -- The status line in the largest font that fits the bar (about half its
  -- height), made smaller until the whole line fits across the screen.
  -- Font:getFace scales sizes by the screen's DPI itself.
-@@ -577,10 +640,53 @@
+@@ -577,10 +647,53 @@
      return nil
  end
  
@@ -299,23 +306,26 @@
      if not zone then
          self.selected_source = nil
          self:refreshUI()
-@@ -963,6 +1069,21 @@
+@@ -963,6 +1076,24 @@
      })
  end
  
 +-- Kobo fork: the device menu (mykobo.koplugin's kobo_devicemenu), if there.
 +function SolitaireUI:onSwipe(arg, ges)
 +    local ok, DeviceMenu = pcall(require, "kobo_devicemenu")
-+    if not (ok and DeviceMenu.isTopSwipe(ges)) then return false end
-+    DeviceMenu.show{
++    return ok and DeviceMenu.handleSwipe(ges, {
 +        title = _("Solitaire"),
 +        items = {
 +            { text = _("Quit Solitaire"), callback = function() self:onClose() end },
 +        },
 +        close_app = function() self:onClose() end,
 +        on_close = function() UIManager:setDirty(self, "full") end,
-+    }
-+    return true
++    }) or false
++end
++
++function SolitaireUI:onTwoFingerSwipe(arg, ges)
++    local ok, DeviceMenu = pcall(require, "kobo_devicemenu")
++    return ok and DeviceMenu.lightGesture(ges) or false
 +end
 +
  function SolitaireUI:onClose()

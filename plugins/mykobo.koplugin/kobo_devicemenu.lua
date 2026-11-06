@@ -61,6 +61,38 @@ local function devMode()
     return (G_reader_settings:readSetting("kobo_devmode_until") or 0) > os.time()
 end
 
+-- The left edge, where a drag up or down sets the light (as in the Reader).
+DeviceMenu.LEFT_EDGE = 1 / 8
+
+--[[--
+The light by a drag, the same in every app as in the Reader: one finger up
+or down along the left edge, or two fingers up or down anywhere. KOReader's
+own handlers do the work (DeviceListener ChangeFlIntensity). True if handled.
+--]]
+function DeviceMenu.lightGesture(ges)
+    if not (ges and Device:hasFrontlight()) then return false end
+    local dir = ges.direction
+    if dir ~= "north" and dir ~= "south" then return false end
+    local edge = ges.ges == "swipe" and ges.pos and ges.pos.x <= Screen:getWidth() * DeviceMenu.LEFT_EDGE
+    if edge or ges.ges == "two_finger_swipe" then
+        broadcast("ChangeFlIntensity", ges, dir == "north" and 1 or -1)
+        return true
+    end
+    return false
+end
+
+--[[--
+For an app's swipe handler: the device menu (a swipe down from the top edge)
+or the light (see lightGesture). opts as for show(). True if handled.
+--]]
+function DeviceMenu.handleSwipe(ges, opts)
+    if DeviceMenu.isTopSwipe(ges) then
+        DeviceMenu.show(opts)
+        return true
+    end
+    return DeviceMenu.lightGesture(ges)
+end
+
 --- Is this gesture the swipe down from the top edge that opens the menu?
 function DeviceMenu.isTopSwipe(ges)
     return ges and ges.ges == "swipe" and ges.direction == "south"
@@ -162,11 +194,11 @@ function DeviceMenu.entries(opts)
     if Device:isKobo() then
         add("go_to_kobo", {
             text = _("Go to Kobo"),
-            help_text = _("Leave KOReader for the Kobo software."),
+            help_text = _("Leave the Reader for the Kobo software."),
             keep_menu_open = true,
             callback = function()
                 UIManager:show(ConfirmBox:new{
-                    text = _("Leave KOReader and go to the Kobo software?"),
+                    text = _("Leave the Reader and go to the Kobo software?"),
                     ok_text = _("Go to Kobo"),
                     ok_callback = function() broadcast("Exit") end,
                 })
@@ -184,7 +216,7 @@ function DeviceMenu.entries(opts)
     end
     if Device:canRestart() then
         add("restart_koreader", {
-            text = _("Restart KOReader"),
+            text = _("Restart Reader"),
             callback = function() broadcast("Restart") end,
         })
     end

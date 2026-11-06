@@ -35,10 +35,15 @@ Base: **v2026.03** (`KOREADER_BASE` in kobo/install.sh).
   (mykobo registers them as `kobo_<key>`; the old Light, Night mode,
   Network, Home and Exit entries are hidden). Order: the app's own items ·
   Light (hold: brightness), Night mode · Wi-Fi, Network…, Check KoboHub,
-  Dev mode · Home, Go to Kobo · Sleep, Restart KOReader, Restart Kobo, Shut
-  down Kobo (the last three and Go to Kobo ask first). The tab shows the
+  Dev mode · Home, Go to Kobo · Sleep, Restart Reader, Restart Kobo, Shut
+  down Kobo (the last two and Go to Kobo ask first). The tab shows the
   app, the time and the battery. An app uses it with
   `pcall(require, "kobo_devicemenu")`.
+- **The light by a drag, in every app** (`DeviceMenu.lightGesture`): one
+  finger up or down along the left edge, or two fingers up or down anywhere,
+  as the Reader's own gestures do (it sends KOReader's ChangeFlIntensity).
+  Apps call `DeviceMenu.handleSwipe(ges, opts)` (menu or light) from their
+  swipe handler.
 - **History** has the apps' title bar (`standard_title_bar` in BookList:
   the X the size of Chess's); its X goes Home, and a swipe down from the
   top opens the device menu (stock: it closed History).
