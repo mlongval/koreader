@@ -14,28 +14,19 @@ local order = {
         "setting",
     },
     navi = {
+        -- Kobo fork: Book = where you are, the book itself, Go to ▸ (places)
         "table_of_contents",
         "bookmarks",
-        "toggle_bookmark", -- if not Device:isTouchDevice() and not useDPadAsActionKeys()
+        "toggle_bookmark",
         "bookmark_browsing_mode",
-        "typeset", -- Kobo fork: the Style tab, as a submenu of Book
+        "typeset",
         "----------------------------",
-        "book_status", -- Kobo fork: from Menu (step 4)
+        "book_status",
         "book_info",
         "----------------------------",
+        "kobo_goto",
+        "----------------------------",
         "navi_settings",
-        "----------------------------",
-        "hide_nonlinear_flows",
-        "----------------------------",
-        "book_map", -- if Device:isTouchDevice() or useDPadAsActionKeys()
-        "page_browser", -- if Device:isTouchDevice() or useDPadAsActionKeys()
-        "----------------------------",
-        "go_to",
-        "skim_to",
-        "autoturn",
-        "----------------------------",
-        "go_to_previous_location",
-        "go_to_next_location",
     },
     navi_settings = {
         "toc_ticks_level_ignore",
@@ -80,11 +71,12 @@ local order = {
         "scrolling",
         "long_press",
         "follow_links",
+        "autoturn",
+        "hide_nonlinear_flows",
         "----------------------------",
         "statistics",
         "exporter",
         "read_timer",
-        "doc_setting_tweak",
         "----------------------------",
         "kobo_settings_app",
         "kobo_everything",
@@ -200,7 +192,6 @@ local order = {
     -- where the Settings app also finds it.
     -- Kobo fork: Menu > My Kobo
     my_kobo = {
-        "learnmode",
         "readiteventually",
         "kobohub",
         "notan", -- Projects/Notan
@@ -232,20 +223,32 @@ local order = {
         "mass_storage_actions",
         "ota_update",
         "help",
+        "----------------------------",
+        "search_settings",
+        "doc_setting_tweak",
+        "find_book_in_calibre_catalog",
+    },
+    kobo_goto = {
+        "go_to",
+        "skim_to",
+        "book_map",
+        "page_browser",
+        "----------------------------",
+        "go_to_previous_location",
+        "go_to_next_location",
     },
     search = {
-        "search_settings",
-        "----------------------------",
+        -- Kobo fork: words and languages; Search settings and the Calibre catalog are in Everything else
         "dictionary_lookup",
         "dictionary_lookup_history",
         "vocabbuilder",
         "----------------------------",
+        "translate_current_page",
+        "learnmode",
+        "----------------------------",
         "wikipedia_lookup",
         "wikipedia_history",
         "----------------------------",
-        "translate_current_page",
-        "----------------------------",
-        "find_book_in_calibre_catalog",
         "fulltext_search",
         "fulltext_search_findall_results",
         "bookmark_search",

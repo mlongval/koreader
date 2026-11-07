@@ -50,16 +50,19 @@ local WIFI_IDLE = 10 * 60      -- seconds without use before Wi-Fi goes off
 local USE_BYTES = 60 * 1024
 local UNTIL = "kobo_devmode_until"
 
+-- The quick menu (hold the top-left corner): what is wanted mid-page.
 local QUICK_MENU = {
     "toggle_frontlight",
-    "show_network_panel",
-    "toggle_dev_mode",
+    "night_mode",
     "learnmode_sidebyside",
     "learnmode_toggle",
-    "kobohub_check_now",
-    "readiteventually_mark_read",
+    "toggle_bookmark",
     "toggle_rotation",
-    "menu_search",
+}
+-- The first one (until 2026-11-06), replaced once if it was never changed.
+local QUICK_MENU_V1 = {
+    "toggle_frontlight", "show_network_panel", "toggle_dev_mode", "learnmode_sidebyside",
+    "learnmode_toggle", "kobohub_check_now", "readiteventually_mark_read", "toggle_rotation", "menu_search",
 }
 
 -- Shared by the reader's and the file browser's instances.
@@ -166,6 +169,38 @@ devOff = function(timed_out)
         or _("Dev mode off: back to saving battery."))
 end
 
+local function quickMenuActions()
+    local actions = { settings = { show_as_quickmenu = true, order = {} } }
+    for __, a in ipairs(QUICK_MENU) do
+        actions[a] = true
+        table.insert(actions.settings.order, a)
+    end
+    return actions
+end
+
+-- Once (2026-11-06): the quick menu's new list, if it is still the first one.
+local function updateQuickMenu(ui)
+    if G_reader_settings:readSetting("kobo_quick_menu_v") == 2 then return end
+    local path = DataStorage:getSettingsDir() .. "/gestures.lua"
+    local live = ui.gestures and ui.gestures.settings_data
+    local file = live or LuaSettings:open(path)
+    local ges = file.data.gesture_reader and file.data.gesture_reader.hold_top_left_corner
+    local order = ges and ges.settings and ges.settings.order
+    local same = order and #order == #QUICK_MENU_V1
+    if same then
+        for i, a in ipairs(QUICK_MENU_V1) do
+            if order[i] ~= a then same = false end
+        end
+    end
+    if same then
+        file.data.gesture_reader.hold_top_left_corner = quickMenuActions()
+        if live then ui.gestures.updated = true end
+        file:flush()
+        logger.info("mykobo: quick menu updated")
+    end
+    G_reader_settings:saveSetting("kobo_quick_menu_v", 2)
+end
+
 -- Once: the settings the menu redesign decided on.
 local function firstRun(ui)
     if G_reader_settings:readSetting("kobo_fork_setup") then return end
@@ -180,12 +215,7 @@ local function firstRun(ui)
     data.gesture_reader = data.gesture_reader or {}
     local ges = data.gesture_reader
     if ges.hold_top_left_corner == nil or next(ges.hold_top_left_corner) == nil then
-        local actions = { settings = { show_as_quickmenu = true, order = {} } }
-        for _, a in ipairs(QUICK_MENU) do
-            actions[a] = true
-            table.insert(actions.settings.order, a)
-        end
-        ges.hold_top_left_corner = actions
+        ges.hold_top_left_corner = quickMenuActions()
         if live then
             ui.gestures.updated = true
             live:flush()
@@ -308,6 +338,7 @@ function MyKobo:init()
     self.ui.menu:registerToMainMenu(self)
     UIManager:nextTick(function()
         firstRun(self.ui)
+        updateQuickMenu(self.ui)
         booksFolder(self.ui)
         applyDev()
         if NetworkMgr:isWifiOn() and not state.idle_task then startIdleCheck() end
@@ -355,6 +386,7 @@ function MyKobo:addToMainMenu(menu_items)
             end,
         }
         menu_items.kobo_everything = { text = _("Everything else") }
+        menu_items.kobo_goto = { text = _("Go to") }
     end
     -- the device menu's items, for KOReader's own Menu tab (kobo_<key>)
     local ok, DeviceMenu = pcall(require, "kobo_devicemenu")

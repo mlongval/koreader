@@ -47,14 +47,21 @@ Base: **v2026.03** (`KOREADER_BASE` in kobo/install.sh).
 - **In a book, the menu is for reading** (step 4 of
   KoboLauncher/PROPOSAL.md): **Menu** = the device items, Home, *Close
   book* (Books comes up); **Book** = contents, bookmarks, Style, book
-  status and information, go to; **Search**; **Settings** = status bar,
-  page turns, scrolling, long-press, links, reading statistics, export,
-  read timer, *Settings…* (the Settings app). Everything else (network,
+  status and information, *Go to ▸* (go to page, skim, book map, page
+  browser, back/forward); **Search** = dictionary, vocabulary, translate
+  page, learning languages, Wikipedia, full-text and bookmark search;
+  **Settings** = status bar, page turns, scrolling, long-press, links,
+  autoturn, non-linear flows, reading statistics, export, read timer,
+  *Settings…* (the Settings app). Everything else (network,
   screen, gestures, device, file browser, History, collections, My Kobo,
   Tools, USB, update, help) is still built into the menu as the submenu
   `kobo_everything`, but mykobo takes it out of sight once the menu is built
   (`menu.kobo_hidden`), where the Settings app finds its items. The file browser's menu is
   unchanged.
+- **Quick menu** (hold the top-left corner, set by mykobo): light, night
+  mode, side-by-side translation, learning mode, bookmark, orientation.
+  The first list (until 2026-11-06) is replaced once if it was never
+  changed (`kobo_quick_menu_v`).
 - **History** has the apps' title bar (`standard_title_bar` in BookList:
   the X the size of Chess's); its X goes Home, and a swipe down from the
   top opens the device menu (stock: it closed History).
