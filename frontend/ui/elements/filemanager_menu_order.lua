@@ -158,6 +158,7 @@ local order = {
         "solitaire", -- github.com/Lalocaballero/solitaire.koplugin
         "----------------------------",
         "launcher_at_start",
+        "kobo_books_folder",
     },
     search = {
         "search_settings",

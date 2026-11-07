@@ -1,6 +1,15 @@
 # KOReader, Kobo fork (branch `kobo`)
 
-Doc's Kobo Elipsa build of KOReader. Only Lua is changed; the Kobo runs
+> **Part of [KoboKit](https://github.com/mlongval/KoboKit)**, a small app system for Kobo e-readers built
+> on KOReader. **Start there** for simple installation instructions.
+>
+> ⚠️ **Written by an AI, no warranty.** This code was written almost
+> entirely by Claude (Anthropic's AI). It comes with no guarantee of any
+> kind, including fitness for any purpose. It may crash, lose your data,
+> brick your Kobo or make it explode. That would not be my fault. Read the
+> [disclaimer](https://github.com/mlongval/KoboKit/blob/main/DISCLAIMER.md) and back up your Kobo first.
+
+A Kobo Elipsa build of KOReader (part of KoboKit). Only Lua is changed; the Kobo runs
 the official release this branch is based on, with the changed files
 copied over it (`kobo/install.sh`).
 
@@ -78,9 +87,10 @@ Base: **v2026.03** (`KOREADER_BASE` in kobo/install.sh).
   title bar (`filemanagerfolderstrip.lua`; by name, 3 rows, then "N
   more"), books alone fill the grid; no "../" tile, a ⌃ button beside
   the House instead (TitleBar `left2_icon`, `setBottomWidget`); the
-  Kobo's `fonts` folder is hidden. Once, mykobo moves the books at the
-  top of home into `Books/` (sidecars, history, collections) and points
-  downloads there.
+  Kobo's `fonts` folder is hidden. *My Kobo › Move loose books into
+  Books* moves the books at the top of home into `Books/` (sidecars,
+  history, collections) and points downloads there; it only runs when
+  asked (it ran by itself once until 2026-11-06).
 - **PDFs open in page view** (`koptoptions.lua`, stock: continuous, where
   every page turn starts lower on the page).
 
@@ -115,3 +125,19 @@ KoboHub, Kobo-ReadItLater, KoboTailScale, KoboChess).
 
 Copy `.adds/koreader/kobo-fork-originals/` back over `.adds/koreader/`
 and delete `plugins/mykobo.koplugin`, or reinstall the official release.
+
+## Issues
+
+Please open issues on [KoboKit](https://github.com/mlongval/KoboKit/issues) using its forms, and read
+[how issues work](https://github.com/mlongval/KoboKit/blob/main/CONTRIBUTING.md) first. Fixes are made by
+Claude Code, so only clearly described, reproducible problems and concrete
+change requests are accepted.
+
+## Thanks
+
+This is a fork of [KOReader](https://github.com/koreader/koreader). **A big
+thank you to the KOReader team** and all its contributors: everything here
+is a small layer on their work. Please don't report problems with this fork
+to the KOReader project. They come from these changes, not from KOReader.
+The changes are under KOReader's licence (AGPL-3.0, see `COPYING`), with no
+warranty.

@@ -231,9 +231,13 @@ local function firstRun(ui)
     G_reader_settings:flush()
 end
 
--- Once, in the file browser: the books at the top of home move into Books/.
+-- On request (My Kobo > Move loose books into Books), in the file browser:
+-- the books at the top of home move into Books/, keeping their reading
+-- progress (sidecar folders, History and collections follow). It used to run
+-- once by itself; it no longer does, so a new install never moves anything.
+-- Nickel (the Kobo's own reader) sees moved books as new ones.
 local function booksFolder(ui)
-    if G_reader_settings:readSetting("kobo_books_folder") or not ui.file_chooser then return end
+    if not ui.file_chooser then return end
     local home = G_reader_settings:readSetting("home_dir") or Device.home_dir
     if not home or lfs.attributes(home, "mode") ~= "directory" then return end
     local books = home .. "/Books"
@@ -339,7 +343,6 @@ function MyKobo:init()
     UIManager:nextTick(function()
         firstRun(self.ui)
         updateQuickMenu(self.ui)
-        booksFolder(self.ui)
         applyDev()
         if NetworkMgr:isWifiOn() and not state.idle_task then startIdleCheck() end
     end)
@@ -395,6 +398,19 @@ function MyKobo:addToMainMenu(menu_items)
             if e.key then menu_items["kobo_" .. e.key] = e.item end
         end
     end
+    if not self.ui.document then menu_items.kobo_books_folder = {
+        text = _("Move loose books into Books"),
+        help_text = _("Books lying at the top of the home folder move into its Books folder, with their reading progress. Nickel (the Kobo's own reader) will see them as new books."),
+        enabled_func = function() return self.ui.file_chooser ~= nil end,
+        callback = function()
+            local ConfirmBox = require("ui/widget/confirmbox")
+            UIManager:show(ConfirmBox:new{
+                text = _("Move the books at the top of the home folder into Books?"),
+                ok_text = _("Move"),
+                ok_callback = function() booksFolder(self.ui) end,
+            })
+        end,
+    } end
     menu_items.dev_mode = {
         text_func = function()
             if devOn() then

@@ -5,10 +5,10 @@
 # the official ones. The first install keeps the originals in
 # .adds/koreader/kobo-fork-originals/. Restart KOReader afterwards.
 #
-#   kobo/install.sh [IP]          (KOReader's SSH server, port 2222)
+#   kobo/install.sh KOBO_IP          (KOReader's SSH server, port 2222)
 set -eu
 KOREADER_BASE=v2026.03
-IP=${1:-100.118.103.93}
+IP=${1:?"usage: $0 KOBO_IP  (the Kobo's address; KOReader shows it in Network > SSH server)"}
 cd "$(dirname "$0")/.."
 KO=/mnt/onboard/.adds/koreader
 
