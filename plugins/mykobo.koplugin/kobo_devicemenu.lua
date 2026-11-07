@@ -212,11 +212,11 @@ function DeviceMenu.entries(opts)
     if Device:isKobo() then
         add("go_to_kobo", {
             text = _("Go to Kobo"),
-            help_text = _("Leave the Reader for the Kobo software."),
+            help_text = _("Leave the Launcher for the Kobo software."),
             keep_menu_open = true,
             callback = function()
                 UIManager:show(ConfirmBox:new{
-                    text = _("Leave the Reader and go to the Kobo software?"),
+                    text = _("Leave the Launcher and go to the Kobo software?"),
                     ok_text = _("Go to Kobo"),
                     ok_callback = function() broadcast("Exit") end,
                 })
@@ -234,7 +234,7 @@ function DeviceMenu.entries(opts)
     end
     if Device:canRestart() then
         add("restart_koreader", {
-            text = _("Restart Reader"),
+            text = _("Restart Launcher"),
             callback = function() broadcast("Restart") end,
         })
     end

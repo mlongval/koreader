@@ -35,7 +35,7 @@ Base: **v2026.03** (`KOREADER_BASE` in kobo/install.sh).
   (mykobo registers them as `kobo_<key>`; the old Light, Night mode,
   Network, Home and Exit entries are hidden). Order: the app's own items ·
   Light (hold: brightness), Night mode · Wi-Fi, Network…, Check KoboHub,
-  Dev mode · Home, Go to Kobo · Sleep, Restart Reader, Restart Kobo, Shut
+  Dev mode · Home, Go to Kobo · Sleep, Restart Launcher, Restart Kobo, Shut
   down Kobo (the last two and Go to Kobo ask first). The tab shows the
   app, the time and the battery. An app uses it with
   `pcall(require, "kobo_devicemenu")`.
