@@ -62,6 +62,10 @@ Base: **v2026.03** (`KOREADER_BASE` in kobo/install.sh).
   mode, side-by-side translation, learning mode, bookmark, orientation.
   The first list (until 2026-11-06) is replaced once if it was never
   changed (`kobo_quick_menu_v`).
+- **Auto-rotate** (Settings › Screen in the Settings app): the Kobo
+  apps follow the accelerometer's turn through `DeviceMenu.followRotation`
+  (KOReader sends it only to the window in front); Chess and Solitaire
+  only between upright and upside down.
 - **History** has the apps' title bar (`standard_title_bar` in BookList:
   the X the size of Chess's); its X goes Home, and a swipe down from the
   top opens the device menu (stock: it closed History).

@@ -93,6 +93,24 @@ function DeviceMenu.handleSwipe(ges, opts)
     return DeviceMenu.lightGesture(ges)
 end
 
+--[[--
+Auto-rotate, for an app in front: KOReader sends the accelerometer's turn
+(SetRotationMode) only to the window in front, so each app passes it here
+and then lays itself out again. portrait_only: only upright <-> upside down
+(an app laid out for portrait). True if the screen turned.
+--]]
+function DeviceMenu.followRotation(mode, portrait_only)
+    if type(mode) ~= "number" or mode == Screen:getRotationMode() then return false end
+    if portrait_only and bit.band(mode, 1) ~= bit.band(Screen:getRotationMode(), 1) then return false end
+    local ui = currentUI()
+    if ui then
+        ui:handleEvent(Event:new("SetRotationMode", mode))
+    else
+        Screen:setRotationMode(mode)
+    end
+    return true
+end
+
 --- Is this gesture the swipe down from the top edge that opens the menu?
 function DeviceMenu.isTopSwipe(ges)
     return ges and ges.ges == "swipe" and ges.direction == "south"

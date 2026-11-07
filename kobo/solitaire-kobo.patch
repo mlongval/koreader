@@ -306,7 +306,7 @@
      if not zone then
          self.selected_source = nil
          self:refreshUI()
-@@ -963,6 +1076,24 @@
+@@ -963,6 +1076,33 @@
      })
  end
  
@@ -321,6 +321,15 @@
 +        close_app = function() self:onClose() end,
 +        on_close = function() UIManager:setDirty(self, "full") end,
 +    }) or false
++end
++
++-- Kobo fork: auto-rotate only upright <-> upside down (laid out for portrait).
++function SolitaireUI:onSetRotationMode(mode)
++    local ok, DeviceMenu = pcall(require, "kobo_devicemenu")
++    if ok and DeviceMenu.followRotation(mode, true) then
++        UIManager:setDirty("all", "full")
++    end
++    return true
 +end
 +
 +function SolitaireUI:onTwoFingerSwipe(arg, ges)
