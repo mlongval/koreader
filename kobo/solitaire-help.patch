@@ -1,0 +1,301 @@
+diff --git a/solitairehelpdialog.lua b/solitairehelpdialog.lua
+new file mode 100644
+index 0000000..4048fa9
+--- /dev/null
++++ b/solitairehelpdialog.lua
+@@ -0,0 +1,137 @@
++--[[--
++Kobo fork: a short explanation the first time a button is used: title,
++text, a "Do not show this again" check box and OK (the same dialog as the
++Kobo system's other apps). The texts are in solitairehelptext.lua; the "do
++not show" choice is kept per button in solitaire_settings.lua
++(help_hidden_<key>), and "Show explanations again" in the device menu
++clears them all.
++
++(Named solitairehelpdialog: KOReader plugins share one module namespace.)
++
++@module solitaire.solitairehelpdialog
++--]]
++
++local Blitbuffer = require("ffi/blitbuffer")
++local Button = require("ui/widget/button")
++local CenterContainer = require("ui/widget/container/centercontainer")
++local CheckButton = require("ui/widget/checkbutton")
++local Device = require("device")
++local Font = require("ui/font")
++local FrameContainer = require("ui/widget/container/framecontainer")
++local Geom = require("ui/geometry")
++local InputContainer = require("ui/widget/container/inputcontainer")
++local Size = require("ui/size")
++local TextBoxWidget = require("ui/widget/textboxwidget")
++local TextWidget = require("ui/widget/textwidget")
++local UIManager = require("ui/uimanager")
++local VerticalGroup = require("ui/widget/verticalgroup")
++local VerticalSpan = require("ui/widget/verticalspan")
++local LuaSettings = require("luasettings")
++local _ = require("gettext")
++local Screen = Device.screen
++
++local HelpDialog = InputContainer:extend{
++    title = nil,
++    text = nil,
++    on_ok = nil, -- function(dont_show_again)
++    modal = true,
++}
++
++function HelpDialog:init()
++    local w = math.floor(math.min(Screen:getWidth(), Screen:getHeight()) * 0.85)
++    local pad = Size.padding.large
++    local inner = w - 2 * pad - 2 * Size.border.window
++    self.check = CheckButton:new{
++        text = _("Do not show this again"),
++        width = inner,
++        parent = self,
++        show_parent = self,
++    }
++    local ok = Button:new{
++        text = _("OK"),
++        width = math.floor(inner / 2),
++        show_parent = self,
++        callback = function() self:done() end,
++    }
++    local big = Size.span.vertical_large * 2
++    self.frame = FrameContainer:new{
++        background = Blitbuffer.COLOR_WHITE,
++        bordersize = Size.border.window,
++        radius = Size.radius.window,
++        padding = pad,
++        VerticalGroup:new{
++            align = "left",
++            TextWidget:new{ text = self.title, face = Font:getFace("tfont"), bold = true, max_width = inner },
++            VerticalSpan:new{ width = big },
++            TextBoxWidget:new{ text = self.text, face = Font:getFace("infofont"), width = inner },
++            VerticalSpan:new{ width = big },
++            self.check,
++            VerticalSpan:new{ width = big },
++            CenterContainer:new{ dimen = Geom:new{ w = inner, h = ok:getSize().h }, ok },
++        },
++    }
++    self[1] = CenterContainer:new{
++        dimen = Geom:new{ x = 0, y = 0, w = Screen:getWidth(), h = Screen:getHeight() },
++        self.frame,
++    }
++end
++
++function HelpDialog:done()
++    UIManager:close(self)
++    if self.on_ok then self.on_ok(self.check.checked) end
++end
++
++function HelpDialog:onClose()
++    self:done()
++    return true
++end
++
++local HELP_PREFIX = "help_hidden_"
++
++local function open(path)
++    local ok, settings = pcall(LuaSettings.open, LuaSettings, path)
++    return ok and settings or nil
++end
++
++--- Run after() at once, or after the button's explanation the first time.
++-- `seen` is a table the caller keeps for the session, so an explanation
++-- dismissed without the check box is not shown again until next time;
++-- `settings_path` is the plugin's settings file.
++function HelpDialog.explainOnce(owner, settings_path, seen, key, after)
++    local HELP = require("solitairehelptext")
++    local help = HELP[key]
++    if not help or seen[key] then return after() end
++    local settings = open(settings_path)
++    if settings and settings:isTrue(HELP_PREFIX .. key) then return after() end
++    seen[key] = true
++    UIManager:show(HelpDialog:new{
++        title = help.title,
++        text = help.text,
++        on_ok = function(hide)
++            if hide then
++                local s = open(settings_path)
++                if s then
++                    s:saveSetting(HELP_PREFIX .. key, true)
++                    s:flush()
++                end
++            end
++            -- the dialog leaves its outline on the cards: clean it off
++            UIManager:setDirty(owner, "full")
++            after()
++        end,
++    }, "ui")
++end
++
++--- Every explanation shows again.
++function HelpDialog.resetAll(settings_path)
++    local settings = open(settings_path)
++    if not settings then return end
++    for key in pairs(settings.data) do
++        if type(key) == "string" and key:sub(1, #HELP_PREFIX) == HELP_PREFIX then
++            settings:delSetting(key)
++        end
++    end
++    settings:flush()
++end
++
++return HelpDialog
+diff --git a/solitairehelptext.lua b/solitairehelptext.lua
+new file mode 100644
+index 0000000..63463b6
+--- /dev/null
++++ b/solitairehelptext.lua
+@@ -0,0 +1,60 @@
++--[[--
++Kobo fork: what each Solitaire button does, the explanation shown the first
++time it is used (solitairehelpdialog.lua), until "Do not show this again".
++
++@module solitaire.solitairehelptext
++--]]
++
++local _ = require("gettext")
++
++return {
++    -- The row of buttons
++    game = {
++        title = _("Game menu"),
++        text = _("Game ▾ opens the menu for the game:\n\n• New game: shuffle and deal a fresh game\n• Statistics: how many games you played and won, your best score, your quickest win\n• Leaderboard: your ten best won games\n• Reset statistics: start the counts over\n\nThe game you are playing is saved by itself, so you can close Solitaire and come back to it later."),
++    },
++    undo = {
++        title = _("Undo"),
++        text = _("Undo takes back your last move: the cards go back where they were.\n\nTap it again to go further back, as far as the start of the game. Use it to try another way when you get stuck.\n\nThe button is grey when there is nothing to take back."),
++    },
++    hint = {
++        title = _("Hint"),
++        text = _("Hint looks for a move you can make and marks the cards for two seconds: the card to move and where it can go.\n\nIf there is no move on the table, it tells you to turn over cards from the stock (the face-down pile at the top left)."),
++    },
++    auto = {
++        title = _("Auto"),
++        text = _("Auto sends up every card that can go onto the four piles at the top right (the foundations), one after another, until none can.\n\nEach foundation is built up by suit, from the Ace to the King. Near the end of a game Auto finishes it for you.\n\nTip: to send up just one card, tap it twice quickly, or hold your finger on it."),
++    },
++    refresh = {
++        title = _("Refresh"),
++        text = _("Refresh flashes the whole screen black and white once.\n\nE-ink keeps faint traces (ghosts) of what was on it before, especially after menus and dialogs. A flash clears them, so the cards look sharp again."),
++    },
++    options = {
++        title = _("Options"),
++        text = _("Options ▾ chooses how many cards you turn over from the stock at a time:\n\n• Draw 1 card: easier, most games can be won\n• Draw 3 cards: the classic, harder game; only the top card of the three can be played\n\nThe current choice has a ✓ and is also shown in the status line. Your choice is kept for next time."),
++    },
++
++    -- Game menu
++    new_game = {
++        title = _("New game"),
++        text = _("New game shuffles the cards and deals a fresh game straight away.\n\nThe goal: move all 52 cards onto the four piles at the top right, each suit from the Ace up to the King. On the table, build columns down in alternating colours (a red 6 on a black 7); only a King can go into an empty column.\n\nA game you had started and not won counts as lost in the statistics."),
++    },
++    stats = {
++        title = _("Statistics"),
++        text = _("Statistics shows your record: games played, won and lost, how often you win, your best and average score, your fewest moves and quickest time for a win, and your winning streaks.\n\nTap anywhere to close it."),
++    },
++    leaderboard = {
++        title = _("Leaderboard"),
++        text = _("The leaderboard lists your ten best won games by score, with the moves, the time and the draw mode of each.\n\nYou score points for cards played to the foundations and from the stock to the table, and lose some for turning the stock over again. Tap anywhere to close it."),
++    },
++    reset_stats = {
++        title = _("Reset statistics"),
++        text = _("Reset statistics clears all the counts and the leaderboard, to start over from nothing.\n\nYou are asked to confirm first, because it cannot be undone. The game you are playing is not touched."),
++    },
++
++    -- Options menu
++    draw_mode = {
++        title = _("Draw 1 or 3"),
++        text = _("This changes how many cards a tap on the stock turns over: one at a time, or three at a time with only the top one playable.\n\nThe change applies to the game on the table right away, and is kept for your next games.\n\nWhen the stock is empty, tap its place to turn the discarded cards back over and go through them again."),
++    },
++}
+diff --git a/solitaireui.lua b/solitaireui.lua
+index 45f6749..12d0b75 100644
+--- a/solitaireui.lua
++++ b/solitaireui.lua
+@@ -253,12 +253,12 @@ function SolitaireUI:buildUI()
+     self.status_bar_height = header:getSize().h
+ 
+     local row = self:buttonRow({
+-        { text = _("Game ▾"), callback = function() self:showGameMenu() end },
+-        { text = _("Undo"), enabled = self.game:canUndo(), callback = function() self:undoMove() end },
+-        { text = _("Hint"), callback = function() self:showHint() end },
+-        { text = _("Auto"), callback = function() self:autoMove() end },
+-        { text = _("Refresh"), callback = function() UIManager:setDirty(self, "full") end },
+-        { text = _("Options ▾"), callback = function() self:showOptionsMenu() end },
++        { text = _("Game ▾"), help = "game", callback = function() self:showGameMenu() end },
++        { text = _("Undo"), help = "undo", enabled = self.game:canUndo(), callback = function() self:undoMove() end },
++        { text = _("Hint"), help = "hint", callback = function() self:showHint() end },
++        { text = _("Auto"), help = "auto", callback = function() self:autoMove() end },
++        { text = _("Refresh"), help = "refresh", callback = function() UIManager:setDirty(self, "full") end },
++        { text = _("Options ▾"), help = "options", callback = function() self:showOptionsMenu() end },
+     }, margin)
+     local button_bar = VerticalGroup:new{
+         align = "center",
+@@ -306,7 +306,7 @@ function SolitaireUI:buttonRow(specs, margin)
+             text = spec.text,
+             width = width,
+             enabled = spec.enabled ~= false,
+-            callback = spec.callback,
++            callback = function() self:explain(spec.help, spec.callback) end,
+             show_parent = self,
+         })
+         if i < #specs then table.insert(group, HorizontalSpan:new{ width = gap }) end
+@@ -323,7 +323,7 @@ function SolitaireUI:showMenu(title, entries)
+             text = entry.text,
+             callback = function()
+                 UIManager:close(dialog)
+-                entry.callback()
++                self:explain(entry.help, entry.callback)
+             end,
+         } })
+     end
+@@ -331,21 +331,29 @@ function SolitaireUI:showMenu(title, entries)
+     UIManager:show(dialog)
+ end
+ 
++-- Kobo fork: the first time a button or menu item is used, a few words on
++-- what it does (solitairehelpdialog.lua), then fn.
++function SolitaireUI:explain(key, fn)
++    if not key then return fn() end
++    self.explained = self.explained or {}
++    require("solitairehelpdialog").explainOnce(self, self.settings_path, self.explained, key, fn)
++end
++
+ function SolitaireUI:showGameMenu()
+     self:showMenu(_("Game"), {
+-        { text = _("New game"), callback = function() self:newGame() end },
+-        { text = _("Statistics"), callback = function() self:showStats() end },
+-        { text = _("Leaderboard"), callback = function() self:showLeaderboard() end },
+-        { text = _("Reset statistics"), callback = function() self:confirmResetStats() end },
++        { text = _("New game"), help = "new_game", callback = function() self:newGame() end },
++        { text = _("Statistics"), help = "stats", callback = function() self:showStats() end },
++        { text = _("Leaderboard"), help = "leaderboard", callback = function() self:showLeaderboard() end },
++        { text = _("Reset statistics"), help = "reset_stats", callback = function() self:confirmResetStats() end },
+     })
+ end
+ 
+ function SolitaireUI:showOptionsMenu()
+     local three = self.game.draw_mode == 3
+     self:showMenu(_("Options"), {
+-        { text = (three and "" or "✓ ") .. _("Draw 1 card"),
++        { text = (three and "" or "✓ ") .. _("Draw 1 card"), help = "draw_mode",
+           callback = function() if three then self:toggleDrawMode() end end },
+-        { text = (three and "✓ " or "") .. _("Draw 3 cards"),
++        { text = (three and "✓ " or "") .. _("Draw 3 cards"), help = "draw_mode",
+           callback = function() if not three then self:toggleDrawMode() end end },
+     })
+ end
+@@ -1082,6 +1090,14 @@ function SolitaireUI:onSwipe(arg, ges)
+     return ok and DeviceMenu.handleSwipe(ges, {
+         title = _("Solitaire"),
+         items = {
++            { text = _("Show explanations again"), callback = function()
++                require("solitairehelpdialog").resetAll(self.settings_path)
++                self.explained = {}
++                UIManager:show(InfoMessage:new{
++                    text = _("Each button will explain itself again the next time it is used."),
++                    timeout = 3,
++                })
++            end },
+             { text = _("Quit Solitaire"), callback = function() self:onClose() end },
+         },
+         close_app = function() self:onClose() end,

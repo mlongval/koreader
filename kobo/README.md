@@ -106,7 +106,15 @@ KoboChess (title bar with an X to quit, a bold status line, one row of
 framed buttons: Game ▾, Undo, Hint, Auto, Refresh, Options ▾); double tap
 a top card to send it to its suit's pile (an Ace, or the next of a started
 suit); a swipe down from the top opens the device menu; and the game
-window is no longer modal, so the menu and its dialogs can go above it. MenuSorter now puts a plugin
+window is no longer modal, so the menu and its dialogs can go above it.
+Then `solitaire-help.patch` (after the Kobo patch): every button and menu
+item explains itself the first time it is used, in a dialog with a *Do not
+show this again* box (new files `solitairehelpdialog.lua`,
+`solitairehelptext.lua`; the choice is kept in `solitaire_settings.lua`),
+and *Show explanations again* in the device menu brings them all back.
+`kobo/install-solitaire.sh KOBO_IP` assembles the patched plugin (KoboHub's
+vendored copy + the three patches in order, as KoboKit's build-kit does)
+and copies it to the Kobo over KOReader's SSH server. MenuSorter now puts a plugin
 whose sorting hint names a menu this fork lacks (e.g. "tools") in Menu >
 Tools instead of failing.
 
