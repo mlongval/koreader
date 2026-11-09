@@ -34,7 +34,7 @@ find "$plugin" \( -name '*.orig' -o -name '*.rej' \) -delete
 
 # Unpack beside, check every file, then swap folders: a dropped connection
 # must never leave KOReader with a half-written plugin.
-files=$(cd "$plugin" && find . -type f | sort)
+files=$(cd "$plugin" && find . -type f | sort | tr "\n" " ")
 tar -C "$plugin" -cf - . | kobo "rm -rf $KO/plugins/.solitaire-new && mkdir -p $KO/plugins/.solitaire-new && tar -C $KO/plugins/.solitaire-new -xf -"
 want=$(cd "$plugin" && for f in $files; do printf '%s %s\n' "$(md5sum < "$f" | cut -c1-32)" "$f"; done)
 got=$(kobo "cd $KO/plugins/.solitaire-new && for f in $files; do printf '%s %s\\n' \"\$(md5sum < \$f | cut -c1-32)\" \"\$f\"; done")
