@@ -225,6 +225,12 @@ function Button:init()
     else
         background_color = Blitbuffer.COLOR_WHITE
         radius = self.radius
+        -- Kobo fork: a button with a frame has rounded corners, everywhere
+        -- (a caller that really wants square ones says radius = 0). The
+        -- frameless buttons of a ButtonTable have no corners to round.
+        if radius == nil and self.bordersize and self.bordersize > 0 then
+            radius = Size.radius.button
+        end
     end
     self.frame = FrameContainer:new{
         margin = self.margin,
@@ -397,10 +403,15 @@ end
 function Button:_doFeedbackHighlight()
     -- NOTE: self[1] -> self.frame, if you're confused about what this does vs. onFocus/onUnfocus ;).
     if self.text then
-        -- We only want the button's *highlight* to have rounded corners (otherwise they're redundant, same color as the bg).
-        -- The nil check is to discriminate the default from callers that explicitly request a specific radius.
-        if self[1].radius == nil or self.background then
-            self[1].radius = Size.radius.button
+        -- The highlight has rounded corners. Kobo fork: framed buttons are
+        -- rounded all the time now, so upstream's trick of recognising "we
+        -- rounded it for the highlight" by the radius' value no longer works:
+        -- what the frame had is remembered (_plain_radius) and put back.
+        -- A caller's own radius (other than ours) still gets the plain invert.
+        if self[1].radius == nil or self[1].radius == Size.radius.button or self.background then
+            self._highlighted = true
+            self._plain_radius = self[1].radius
+            self[1].radius = self[1].radius or Size.radius.button
             -- And here, it's easier to just invert the bg/fg colors ourselves,
             -- so as to preserve the rounded corners in one step.
             self[1].background = self[1].background:invert()
@@ -422,8 +433,9 @@ end
 
 function Button:_undoFeedbackHighlight(is_translucent)
     if self.text then
-        if self[1].radius == Size.radius.button then
-            self[1].radius = nil
+        if self._highlighted then
+            self._highlighted = nil
+            self[1].radius = self._plain_radius
             self[1].background = self[1].background:invert()
             self.label_widget.fgcolor = self.label_widget.fgcolor:invert()
         else

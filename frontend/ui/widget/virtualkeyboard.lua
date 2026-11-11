@@ -261,7 +261,7 @@ function VirtualKey:init()
         margin = 0,
         bordersize = self.bordersize,
         background = Blitbuffer.COLOR_WHITE,
-        radius = 0,
+        radius = Size.radius.button, -- Kobo fork: keys have rounded corners, like every button
         padding = 0,
         allow_mirroring = false,
         CenterContainer:new{

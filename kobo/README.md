@@ -91,6 +91,12 @@ Base: **v2026.03** (`KOREADER_BASE` in kobo/install.sh).
   Books* moves the books at the top of home into `Books/` (sidecars,
   history, collections) and points downloads there; it only runs when
   asked (it ran by itself once until 2026-11-06).
+- **Rounded buttons everywhere** (`frontend/ui/widget/button.lua`,
+  `virtualkeyboard.lua`): every button with a frame has rounded corners, in
+  the Launcher's own screens and in every app, without the apps doing
+  anything (a caller that wants square corners passes `radius = 0`); the
+  keys of the on-screen keyboard too. The tap highlight no longer uses the
+  radius' value to know it was the one that rounded the button.
 - **PDFs open in page view** (`koptoptions.lua`, stock: continuous, where
   every page turn starts lower on the page).
 
