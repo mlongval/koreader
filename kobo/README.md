@@ -1,15 +1,15 @@
 # KOReader, Kobo fork (branch `kobo`)
 
-> **Part of [KoboKit](https://github.com/mlongval/KoboKit)**, a small app system for Kobo e-readers built
+> **Part of [KOKit](https://github.com/mlongval/KOKit)**, a small app system for Kobo e-readers built
 > on KOReader. **Start there** for simple installation instructions.
 >
 > ⚠️ **Written by an AI, no warranty.** This code was written almost
 > entirely by Claude (Anthropic's AI). It comes with no guarantee of any
 > kind, including fitness for any purpose. It may crash, lose your data,
 > or stop your Kobo from working. That would not be my fault. Read the
-> [disclaimer](https://github.com/mlongval/KoboKit/blob/main/DISCLAIMER.md) and back up your Kobo first.
+> [disclaimer](https://github.com/mlongval/KOKit/blob/main/DISCLAIMER.md) and back up your Kobo first.
 
-A Kobo Elipsa build of KOReader (part of KoboKit). Only Lua is changed; the Kobo runs
+A Kobo Elipsa build of KOReader (part of KOKit). Only Lua is changed; the Kobo runs
 the official release this branch is based on, with the changed files
 copied over it (`kobo/install.sh`).
 
@@ -26,9 +26,9 @@ Base: **v2026.03** (`KOREADER_BASE` in kobo/install.sh).
 - **Hold Menu** = light on/off (the tab shows ☀ when on); **hold
   Settings** = network panel (from tailscale.koplugin; the tab shows ◦
   for Wi-Fi, ● for Tailscale, DEV in Dev mode).
-- **Menu** holds **Home** (the Launcher, github.com/mlongval/KoboLauncher),
+- **Menu** holds **Home** (the Launcher, github.com/mlongval/KOLauncher),
   Light, Network, File browser, History…, **My Kobo**
-  (Learning languages, ReadItEventually, KoboHub, Notan, Chess, Solitaire,
+  (Learning languages, ReadItEventually, KOHub, Notan, Chess, Solitaire,
   Home screen when KOReader starts, Dev mode),
   **Tools** (every tool A–Z; was the Tools tab + More tools), Book
   status/information, Help (Menu search first), Exit.
@@ -43,7 +43,7 @@ Base: **v2026.03** (`KOREADER_BASE` in kobo/install.sh).
   the clock), and shown as the first items of KOReader's own Menu tab
   (mykobo registers them as `kobo_<key>`; the old Light, Night mode,
   Network, Home and Exit entries are hidden). Order: the app's own items ·
-  Light (hold: brightness), Night mode · Wi-Fi, Network…, Check KoboHub,
+  Light (hold: brightness), Night mode · Wi-Fi, Network…, Check KOHub,
   Dev mode · Home, Go to Kobo · Sleep, Restart Launcher, Restart Kobo, Shut
   down Kobo (the last two and Go to Kobo ask first). The tab shows the
   app, the time and the battery. An app uses it with
@@ -54,7 +54,7 @@ Base: **v2026.03** (`KOREADER_BASE` in kobo/install.sh).
   Apps call `DeviceMenu.handleSwipe(ges, opts)` (menu or light) from their
   swipe handler.
 - **In a book, the menu is for reading** (step 4 of
-  KoboLauncher/PROPOSAL.md): **Menu** = the device items, Home, *Close
+  KOLauncher/PROPOSAL.md): **Menu** = the device items, Home, *Close
   book* (Books comes up); **Book** = contents, bookmarks, Style, book
   status and information, *Go to ▸* (go to page, skim, book map, page
   browser, back/forward); **Search** = dictionary, vocabulary, translate
@@ -108,7 +108,7 @@ folder): on the Elipsa the status line was cut off and the rank
 and suit symbols too big; now the status line fits the bar and the
 screen width, and the symbols are about half their old size.
 Then `solitaire-kobo.patch` (after the sizes patch): laid out like
-KoboChess (title bar with an X to quit, a bold status line, one row of
+KOChess (title bar with an X to quit, a bold status line, one row of
 framed buttons: Game ▾, Undo, Hint, Auto, Refresh, Options ▾); double tap
 a top card to send it to its suit's pile (an Ace, or the next of a started
 suit); a swipe down from the top opens the device menu; and the game
@@ -118,14 +118,14 @@ item explains itself the first time it is used, in a dialog with a *Do not
 show this again* box (new files `solitairehelpdialog.lua`,
 `solitairehelptext.lua`; the choice is kept in `solitaire_settings.lua`),
 and *Show explanations again* in the device menu brings them all back.
-`kobo/install-solitaire.sh KOBO_IP` assembles the patched plugin (KoboHub's
-vendored copy + the three patches in order, as KoboKit's build-kit does)
+`kobo/install-solitaire.sh KOBO_IP` assembles the patched plugin (KOHub's
+vendored copy + the three patches in order, as KOKit's build-kit does)
 and copies it to the Kobo over KOReader's SSH server. MenuSorter now puts a plugin
 whose sorting hint names a menu this fork lacks (e.g. "tools") in Menu >
 Tools instead of failing.
 
-The Kobo-specific plugins live in their own repos (KoboLanguage,
-KoboHub, Kobo-ReadItLater, KoboTailScale, KoboChess).
+The Kobo-specific plugins live in their own repos (KOLanguage,
+KOHub, KO-ReadItLater, KOTailScale, KOChess).
 
 ## A new KOReader release
 
@@ -142,8 +142,8 @@ and delete `plugins/mykobo.koplugin`, or reinstall the official release.
 
 ## Issues
 
-Please open issues on [KoboKit](https://github.com/mlongval/KoboKit/issues) using its forms, and read
-[how issues work](https://github.com/mlongval/KoboKit/blob/main/CONTRIBUTING.md) first. Fixes are made by
+Please open issues on [KOKit](https://github.com/mlongval/KOKit/issues) using its forms, and read
+[how issues work](https://github.com/mlongval/KOKit/blob/main/CONTRIBUTING.md) first. Fixes are made by
 Claude Code, so only clearly described, reproducible problems and concrete
 change requests are accepted.
 

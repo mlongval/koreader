@@ -187,7 +187,7 @@ local order = {
         "advanced_settings",
         "developer_options",
     },
-    -- Kobo fork (step 4 of KoboLauncher/PROPOSAL.md): the reader's tabs are
+    -- Kobo fork (step 4 of KOLauncher/PROPOSAL.md): the reader's tabs are
     -- for reading; everything else is under Settings > Everything else,
     -- where the Settings app also finds it.
     -- Kobo fork: Menu > My Kobo

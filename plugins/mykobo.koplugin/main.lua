@@ -9,7 +9,7 @@ Wi-Fi is turned off after 10 minutes without use.
 "Use" is measured on the Wi-Fi interface: a minute with more than a
 little traffic counts as used (a single translation is too small to
 show; a tap after Wi-Fi went off just brings it back). Tailscale's
-keep-alives stay under the threshold, and minutes in which KoboHub is checked in the background
+keep-alives stay under the threshold, and minutes in which KOHub is checked in the background
 (kobohub_client busy) don't count either way, so the automatic checks
 don't keep Wi-Fi on.
 
@@ -19,7 +19,7 @@ menu on a long-press of the top-left corner (if nothing is there yet).
 Books folder (once, in the file browser): the books at the top of the home
 folder move into Books/, the way the file browser's own Cut and Paste moves
 them (reading positions, history, collections), and downloads (OPDS,
-KoboHub's Calibre) go to Books/ from then on.
+KOHub's Calibre) go to Books/ from then on.
 
 @module koplugin.mykobo
 --]]--

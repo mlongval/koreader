@@ -9,7 +9,7 @@ Order (most used first, the drastic ones last):
 
     the app's own items
     Light (hold: brightness and warmth) · Night mode
-    Wi-Fi · Network… · Check KoboHub · Dev mode
+    Wi-Fi · Network… · Check KOHub · Dev mode
     Home · Go to Kobo
     Sleep · Restart KOReader · Restart Kobo · Shut down Kobo
 
@@ -180,7 +180,7 @@ function DeviceMenu.entries(opts)
     end
     if ui and ui.kobohub then
         add("kobohub", {
-            text = _("Check KoboHub"),
+            text = _("Check KOHub"),
             callback = function() broadcast("KoboHubCheckNow") end,
         })
     end

@@ -1,10 +1,10 @@
 #!/bin/sh
 # Assemble the patched Solitaire plugin and copy it to a Kobo over
 # KOReader's SSH server (port 2222, blank password). The plugin is
-# Lalocaballero/solitaire.koplugin as vendored in KoboHub (master branch),
+# Lalocaballero/solitaire.koplugin as vendored in KOHub (master branch),
 # with solitaire-sizes.patch, solitaire-kobo.patch and solitaire-help.patch
 # applied in that order (each one only if not already in the vendored copy),
-# the same as KoboKit's tools/build-kit.sh. Restart KOReader afterwards.
+# the same as KOKit's tools/build-kit.sh. Restart KOReader afterwards.
 #
 #   kobo/install-solitaire.sh KOBO_IP
 #   KOBOHUB=/path/to/KoboHub kobo/install-solitaire.sh KOBO_IP
