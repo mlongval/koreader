@@ -75,6 +75,11 @@ Base: **v2026.03** (`KOREADER_BASE` in kobo/install.sh).
   apps follow the accelerometer's turn through `DeviceMenu.followRotation`
   (KOReader sends it only to the window in front); Chess and Solitaire
   only between upright and upside down.
+- **Touch test** (`plugins/mykobo.koplugin/kobo_touchtest.lua`, Settings ›
+  Touch › Touch test…): tap five crosses; it shows how far the taps land
+  from them (where the finger lands, and where taps arrive with the
+  correction in use) and can correct every tap by that much, in screen
+  terms (after the rotation step), in every app. Setting `kobo_touch_offset`.
 - **History** has the apps' title bar (`standard_title_bar` in BookList:
   the X the size of Chess's); its X goes Home, and a swipe down from the
   top opens the device menu (stock: it closed History).

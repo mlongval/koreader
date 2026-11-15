@@ -322,6 +322,8 @@ local function hideEverythingElse(menu)
 end
 
 function MyKobo:init()
+    -- a touch correction set in the touch test (kobo_touchtest.lua)
+    if G_reader_settings:readSetting("kobo_touch_offset") then require("kobo_touchtest").install() end
     local menu = self.ui.menu
     if self.ui.document and menu and menu.setUpdateItemTable and not menu.kobo_hide_wrapped then
         menu.kobo_hide_wrapped = true
@@ -398,6 +400,11 @@ function MyKobo:addToMainMenu(menu_items)
             if e.key then menu_items["kobo_" .. e.key] = e.item end
         end
     end
+    menu_items.kobo_touch_test = {
+        text = _("Touch test…"),
+        help_text = _("Tap five crosses; it shows how far your taps land from them, and can correct every tap by that much."),
+        callback = function() require("kobo_touchtest").show() end,
+    }
     if not self.ui.document then menu_items.kobo_books_folder = {
         text = _("Move loose books into Books"),
         help_text = _("Books lying at the top of the home folder move into its Books folder, with their reading progress. Nickel (the Kobo's own reader) will see them as new books."),
