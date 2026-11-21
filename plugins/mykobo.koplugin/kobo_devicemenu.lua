@@ -9,7 +9,8 @@ Order (most used first, the drastic ones last):
 
     the app's own items
     Light (hold: brightness and warmth) · Night mode
-    Wi-Fi · Network… · Check KOHub · Dev mode
+    Wi-Fi (hold: choose a network) · No network · Wi-Fi when a book opens
+    Network… · Check KOHub · Dev mode
     Home · Go to Kobo
     Sleep · Restart KOReader · Restart Kobo · Shut down Kobo
 
@@ -167,8 +168,31 @@ function DeviceMenu.entries(opts)
         add("wifi", {
             text = _("Wi-Fi"),
             checked_func = function() return NetworkMgr:isWifiOn() end,
+            help_text = _("Tap: connects in the background to a known network. Hold: the list of networks."),
             callback = function()
                 if NetworkMgr:isWifiOn() then NetworkMgr:toggleWifiOff() else NetworkMgr:toggleWifiOn() end
+            end,
+            hold_callback = function(touchmenu)
+                if touchmenu and touchmenu.closeMenu then touchmenu:closeMenu() end
+                NetworkMgr:toggleWifiOn(nil, true, true)
+            end,
+        })
+        add("no_network", {
+            text = _("No network"),
+            help_text = _("While this is on, nothing turns Wi-Fi on: not a book opening, not waking up, not a plugin, not the Wi-Fi switch. Turning it on turns Wi-Fi off."),
+            checked_func = function() return NetworkMgr:isNetworkSwitchedOff() end,
+            callback = function(touchmenu)
+                NetworkMgr:setNetworkSwitchedOff(not NetworkMgr:isNetworkSwitchedOff())
+                if touchmenu and touchmenu.updateItems then touchmenu:updateItems() end
+            end,
+        })
+        add("wifi_on_open", {
+            text = _("Wi-Fi when a book opens"),
+            help_text = _("Opening a book turns Wi-Fi on (in the background) to fetch the reading position from your other devices. Off: the position is fetched the next time Wi-Fi is on anyway."),
+            checked_func = function() return G_reader_settings:isTrue("kobo_wifi_on_open") end,
+            enabled_func = function() return not NetworkMgr:isNetworkSwitchedOff() end,
+            callback = function()
+                G_reader_settings:flipNilOrFalse("kobo_wifi_on_open")
             end,
         })
     end

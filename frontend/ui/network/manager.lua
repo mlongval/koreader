@@ -6,6 +6,7 @@ local Event = require("ui/event")
 local InfoMessage = require("ui/widget/infomessage")
 local LuaSettings = require("luasettings")
 local MultiConfirmBox = require("ui/widget/multiconfirmbox")
+local Notification = require("ui/widget/notification")
 local UIManager = require("ui/uimanager")
 local ffi = require("ffi")
 local ffiutil = require("ffi/util")
@@ -32,6 +33,92 @@ local NetworkMgr = {
     _before_action_tripped = nil,
 }
 
+--[[ Kobo fork: "No network", and Wi-Fi in the background.
+
+No network (setting kobo_no_network): while it is on, nothing turns Wi-Fi
+on -- not a plugin, not waking up, not a book opening, not the Wi-Fi
+switch (which says why instead). Every way in is guarded here:
+enableWifi, toggleWifiOn, promptWifiOn, beforeWifiAction (and so
+runWhenOnline & co.), goOnlineToRun, and, as a backstop, turnOnWifi,
+restoreWifiAsync (both wrapped in init) and connectivityCheck.
+
+In the background (Kobo): when an action needs the network and Wi-Fi is
+off (beforeWifiAction "turn on"), Wi-Fi starts with restore-wifi-async.sh
+-- the script used when waking up -- instead of the blocking
+enable-wifi.sh + wpa_supplicant wait, so the reader keeps working while
+it connects. A small note says so at the start, and another at the end:
+connected, or no network. The action still runs once connected.
+(goOnlineToRun keeps the stock blocking way: its callers must wait.)
+]]
+
+local function toast(text)
+    UIManager:show(Notification:new{ text = text, timeout = 3 })
+end
+
+function NetworkMgr:isNetworkSwitchedOff()
+    return G_reader_settings:isTrue("kobo_no_network")
+end
+
+-- True when No network is on (Wi-Fi then stays off). tell: say so, at
+-- most once a minute (an action may ask again and again).
+function NetworkMgr:refusedByNoNetwork(tell)
+    if not self:isNetworkSwitchedOff() then return false end
+    logger.info("NetworkMgr: No network is on; Wi-Fi stays off")
+    local now = os.time()
+    if tell and now - (self._no_network_told or 0) >= 60 then
+        self._no_network_told = now
+        toast(_("No network is on: Wi-Fi stays off."))
+    end
+    return true
+end
+
+-- Turning No network on also turns Wi-Fi off (and stops a connection attempt).
+function NetworkMgr:setNetworkSwitchedOff(off)
+    if off then
+        G_reader_settings:makeTrue("kobo_no_network")
+        self._background_wifi = nil
+        if self.pending_connection or self:isWifiOn() then
+            self:disableWifi(nil, true)
+        end
+    else
+        G_reader_settings:delSetting("kobo_no_network")
+        self._no_network_told = nil
+    end
+    G_reader_settings:flush()
+end
+
+-- End of a background connection: the note, and the state cleared.
+function NetworkMgr:_endBackgroundWifi(ok)
+    if not self._background_wifi then return end
+    self._background_wifi = nil
+    if ok then
+        toast(_("Wi-Fi connected."))
+    else
+        toast(_("Wi-Fi: could not connect (no known network in reach). Hold Wi-Fi to choose one."))
+    end
+end
+
+function NetworkMgr:canConnectInBackground()
+    return Device:isKobo() and Device:hasWifiRestore() and not self._blocking_wait
+end
+
+function NetworkMgr:turnOnWifiInBackground(callback)
+    if self.pending_connection then
+        logger.warn("NetworkMgr:turnOnWifiInBackground: A previous connection attempt is still ongoing!")
+        toast(_("Wi-Fi: already connecting…"))
+        return
+    end
+    UIManager:broadcastEvent(Event:new("NetworkConnecting"))
+    self.pending_connection = true
+    self._background_wifi = { seen_on = false }
+    toast(_("Wi-Fi: connecting in the background…"))
+    self:restoreWifiAsync()
+    if self.pending_connectivity_check then
+        self:unscheduleConnectivityCheck()
+    end
+    self:scheduleConnectivityCheck(callback)
+end
+
 function NetworkMgr:readNWSettings()
     self.nw_settings = LuaSettings:open(DataStorage:getSettingsDir().."/network.lua")
 end
@@ -54,6 +141,7 @@ function NetworkMgr:_abortWifiConnection()
     end
     -- We're obviously done with this connection attempt
     self.pending_connection = false
+    self:_endBackgroundWifi(false)
 end
 
 -- Attempt to deal with platforms that don't guarantee isConnected when turnOnWifi returns,
@@ -74,6 +162,25 @@ end
 -- Used after restoreWifiAsync() and the turn_on beforeWifiAction to make sure we eventually send a NetworkConnected event,
 -- as quite a few things rely on it (KOSync, c.f. #5109; the network activity check, c.f., #6424).
 function NetworkMgr:connectivityCheck(iter, callback, widget)
+    -- Kobo fork: No network was turned on meanwhile.
+    if self:isNetworkSwitchedOff() then
+        self._background_wifi = nil
+        if widget then UIManager:close(widget) end
+        self:_abortWifiConnection()
+        return
+    end
+    -- Kobo fork: in the background, restore-wifi-async.sh gives up after
+    -- 15 s and takes Wi-Fi down again; no need to wait out the 45 s then.
+    local bg = self._background_wifi
+    if bg then
+        if self:isWifiOn() then
+            bg.seen_on = true
+        elseif bg.seen_on or iter >= 80 then
+            logger.info("Background Wi-Fi: the connection failed (after", iter * 0.25, "seconds)")
+            self:_abortWifiConnection()
+            return
+        end
+    end
     -- Give up after a while (restoreWifiAsync can take over 45s, so, try to cover that)...
     if iter >= 180 then
         logger.info("Failed to restore Wi-Fi (after", iter * 0.25, "seconds)!")
@@ -93,6 +200,7 @@ function NetworkMgr:connectivityCheck(iter, callback, widget)
         G_reader_settings:makeTrue("wifi_was_on")
         logger.info("Wi-Fi successfully restored (after", iter * 0.25, "seconds)!")
         UIManager:broadcastEvent(Event:new("NetworkConnected"))
+        self:_endBackgroundWifi(true)
 
         -- Handle the UI & callback if it's from a beforeWifiAction...
         if widget then
@@ -130,6 +238,16 @@ end
 
 function NetworkMgr:init()
     Device:initNetworkManager(self)
+    -- Kobo fork: the No network backstop, whatever path the backend takes.
+    local turnOnWifi, restoreWifiAsync = self.turnOnWifi, self.restoreWifiAsync
+    self.turnOnWifi = function(mgr, ...)
+        if mgr:refusedByNoNetwork() then return false end
+        return turnOnWifi(mgr, ...)
+    end
+    self.restoreWifiAsync = function(mgr, ...)
+        if mgr:refusedByNoNetwork() then return end
+        return restoreWifiAsync(mgr, ...)
+    end
     self.interface = self:getNetworkInterfaceName()
 
     self:queryNetworkState()
@@ -322,6 +440,16 @@ end
 
 -- Wrappers around turnOnWifi & turnOffWifi with proper Event signaling
 function NetworkMgr:enableWifi(wifi_cb, interactive)
+    if self:refusedByNoNetwork(interactive) then return false end
+    -- Kobo fork: plugins turning Wi-Fi on (not a person) never freeze the reader.
+    if not interactive and self:canConnectInBackground() then
+        if self:isWifiOn() and self:isConnected() then
+            if wifi_cb then wifi_cb() end
+            return true
+        end
+        self:turnOnWifiInBackground(wifi_cb)
+        return true
+    end
     -- NOTE: Let the backend run the wifi_cb via a connectivity check once it's *actually* attempted a connection,
     --       as it knows best when that actually happens (especially reconnectOrShowNetworkMenu), unlike us.
     local connectivity_cb = function()
@@ -385,6 +513,7 @@ function NetworkMgr:disableWifi(cb, interactive)
     end
     -- Can't be connecting since we're killing Wi-Fi ;)
     self.pending_connection = false
+    self._background_wifi = nil -- Kobo fork: no "connected"/"could not" note after this
 
     self:turnOffWifi(complete_callback)
 
@@ -395,6 +524,13 @@ function NetworkMgr:disableWifi(cb, interactive)
 end
 
 function NetworkMgr:toggleWifiOn(complete_callback, long_press, interactive)
+    if self:refusedByNoNetwork(true) then return end
+    -- Kobo fork: a tap on Wi-Fi connects in the background to a known
+    -- network; a long press keeps the stock way (the list of networks).
+    if not long_press and self:canConnectInBackground() then
+        self:turnOnWifiInBackground(complete_callback)
+        return
+    end
     local toggle_im = InfoMessage:new{
         text = _("Turning on Wi-Fi…"),
     }
@@ -422,6 +558,7 @@ end
 
 -- NOTE: Only used by the beforeWifiAction framework, so, can never be flagged as "interactive" ;).
 function NetworkMgr:promptWifiOn(complete_callback)
+    if self:refusedByNoNetwork(true) then return end
     -- If there's already an ongoing connection attempt, don't even display the ConfirmBox,
     -- as that's just confusing, especially on Android, because you might have seen the one you tapped "Turn on" on disappear,
     -- and be surprised by new ones that popped up out of focus while the system settings were opened...
@@ -490,6 +627,12 @@ function NetworkMgr:turnOnWifiAndWaitForConnection(callback)
         return
     end
 
+    if self:refusedByNoNetwork(true) then return false end
+    -- Kobo fork: connect in the background, the reader stays usable.
+    if self:canConnectInBackground() then
+        return self:turnOnWifiInBackground(callback)
+    end
+
     local info = InfoMessage:new{ text = _("Connecting to Wi-Fi…") }
     UIManager:show(info)
     UIManager:forceRePaint()
@@ -552,6 +695,7 @@ end
 function NetworkMgr:beforeWifiAction(callback)
     -- Remember that we ran, for afterWifiAction...
     self:setBeforeActionFlag()
+    if self:refusedByNoNetwork(true) then return false end
 
     local wifi_enable_action = G_reader_settings:readSetting("wifi_enable_action")
     if wifi_enable_action == "turn_on" then
@@ -720,7 +864,11 @@ function NetworkMgr:goOnlineToRun(callback)
 
     -- In case we abort before the beforeWifiAction, we won't pass it the callback, but run it ourselves,
     -- to avoid it firing too late (or at the very least being pinned for too long).
+    if self:refusedByNoNetwork(true) then return false end
+    -- Kobo fork: goOnlineToRun must block, so no background connection here.
+    self._blocking_wait = true
     local info = self:beforeWifiAction()
+    self._blocking_wait = nil
     -- NOTE: Unlike turnOnWifiAndWaitForConnection, we're not reentrant,
     --       so if there's already a connection attempt pending,
     --       we can afford to *try* to wait for its success,

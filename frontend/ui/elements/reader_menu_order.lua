@@ -266,6 +266,8 @@ local order = {
         "kobo_night_mode",
         "----------------------------",
         "kobo_wifi",
+        "kobo_no_network",
+        "kobo_wifi_on_open",
         "kobo_network",
         "kobo_kobohub",
         "kobo_dev_mode",

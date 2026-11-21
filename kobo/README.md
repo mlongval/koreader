@@ -88,6 +88,19 @@ Base: **v2026.03** (`KOREADER_BASE` in kobo/install.sh).
   and book close (over a minute with no network in reach). Now waking
   starts Wi-Fi in the background and pulls when it connects; sleep and
   closing a book push only when already online.
+  Opening a book no longer turns Wi-Fi on (stock: ~30 s frozen at
+  every open); it pulls if online, else with the next connection.
+  Device menu › **Wi-Fi when a book opens** brings it back (in the
+  background).
+- **Wi-Fi in the background** (`frontend/ui/network/manager.lua`):
+  whatever needs the network (a plugin, a tap on Wi-Fi) connects with
+  restore-wifi-async.sh while the reader keeps working; a note says
+  "connecting" at the start and "connected" / "could not connect" at
+  the end. Hold Wi-Fi for the list of networks (the stock way).
+  goOnlineToRun still blocks (its callers must wait).
+- **No network** (device menu, setting `kobo_no_network`): while on,
+  nothing turns Wi-Fi on (books, waking, plugins, the Wi-Fi switch,
+  KOHub's night visit); turning it on turns Wi-Fi off.
 - **File browser**: folders are a strip of labelled buttons under the
   title bar (`filemanagerfolderstrip.lua`; by name, 3 rows, then "N
   more"), books alone fill the grid; no "../" tile, a ⌃ button beside

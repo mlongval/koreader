@@ -177,7 +177,15 @@ end
 function KOSync:onReaderReady()
     if self.settings.auto_sync then
         UIManager:nextTick(function()
-            self:getProgress(true, false)
+            -- Kobo fork: opening a book turns Wi-Fi on only when asked to
+            -- (setting kobo_wifi_on_open, off by default; in the background
+            -- then). Online: pull now. Off: the pull comes with the next
+            -- NetworkConnected.
+            if NetworkMgr:isConnected() then
+                self:getProgress(false, false)
+            elseif G_reader_settings:isTrue("kobo_wifi_on_open") then
+                self:getProgress(true, false)
+            end
         end)
     end
     -- NOTE: Keep in mind that, on Android, turning on WiFi requires a focus switch, which will trip a Suspend/Resume pair.
