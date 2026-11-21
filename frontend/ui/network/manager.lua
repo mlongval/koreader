@@ -119,6 +119,96 @@ function NetworkMgr:turnOnWifiInBackground(callback)
     self:scheduleConnectivityCheck(callback)
 end
 
+--[[ Kobo fork: Wi-Fi in the background that actually connects.
+
+Stock restore-wifi-async.sh only starts wpa_supplicant and waits for it to
+join a network from /etc/wpa_supplicant/wpa_supplicant.conf. The networks
+KOReader saved (settings/network.lua) are given to wpa_supplicant only by
+the blocking way (reconnectOrShowNetworkMenu -> authenticateNetwork), so on
+a Kobo whose networks were all added in KOReader the stock script never
+connects ("Failed to connect to preferred AP!"). This script does what the
+blocking way does, in the background: enable-wifi.sh, then each saved
+network as authenticateNetwork gives it (add_network, ssid in hex, psk or
+key_mgmt NONE, enable_network), wait up to 30 s for wpa_state=COMPLETED,
+then obtain-ip.sh. It holds the keys, so it lives in /tmp (RAM), readable
+by root only, and deletes itself. Returns false (the caller then uses the
+stock script) when no network is saved or the script can't be written.
+]]
+local KOBO_WIFI_SCRIPT = "/tmp/koreader-wifi-bg.sh"
+
+local KOBO_WIFI_SCRIPT_BODY = [[
+#!/bin/sh
+# Written by KOReader (Kobo fork, NetworkMgr:_koboWifiAsync); deletes itself.
+trap 'rm -f %SCRIPT%' EXIT
+W='wpa_cli -i %IFACE%'
+add() {
+    id=$($W add_network | tail -n 1)
+    $W set_network "$id" ssid "$1" >/dev/null
+    if [ -n "$2" ]; then
+        $W set_network "$id" psk "$2" >/dev/null
+    else
+        $W set_network "$id" key_mgmt NONE >/dev/null
+    fi
+    $W enable_network "$id" >/dev/null
+}
+run() {
+    echo "[$(date)] koreader-wifi-bg: starting Wi-Fi"
+    ./enable-wifi.sh
+%ADDS%
+    n=0
+    while ! $W status | grep -q 'wpa_state=COMPLETED'; do
+        n=$((n + 1))
+        if [ $n -ge 120 ]; then
+            echo "[$(date)] koreader-wifi-bg: no saved network in reach"
+            ./disable-wifi.sh
+            return 1
+        fi
+        usleep 250000
+    done
+    ./obtain-ip.sh
+    echo "[$(date)] koreader-wifi-bg: connected"
+}
+run
+]]
+
+local function shellQuote(str)
+    return "'" .. tostring(str):gsub("'", [['\'']]) .. "'"
+end
+
+function NetworkMgr:_koboWifiAsync()
+    local saved = self:getAllSavedNetworks()
+    saved = saved and saved.data
+    if type(saved) ~= "table" then return false end
+    local bin_to_hex = require("ffi/sha2").bin_to_hex
+    local adds = {}
+    for __, nw in pairs(saved) do
+        if type(nw) == "table" and type(nw.ssid) == "string" and nw.ssid ~= "" then
+            local key = ""
+            if type(nw.psk) == "string" and #nw.psk == 64 and nw.psk:match("^%x+$") then
+                key = nw.psk                           -- as authenticateNetwork does
+            elseif type(nw.password) == "string" and #nw.password > 0 then
+                key = '"' .. nw.password .. '"'        -- wpa_supplicant's passphrase form
+            end
+            table.insert(adds, "    add " .. bin_to_hex(nw.ssid) .. " " .. shellQuote(key))
+        end
+    end
+    if #adds == 0 then return false end
+    local iface = self.interface or self:getNetworkInterfaceName() or "eth0"
+    local script = KOBO_WIFI_SCRIPT_BODY
+        :gsub("%%SCRIPT%%", function() return KOBO_WIFI_SCRIPT end)
+        :gsub("%%IFACE%%", function() return iface end)
+        :gsub("%%ADDS%%", function() return table.concat(adds, "\n") end)
+    -- Created empty with mode 600 first, so the keys are never readable by others.
+    os.execute("umask 077; rm -f " .. KOBO_WIFI_SCRIPT .. "; : > " .. KOBO_WIFI_SCRIPT)
+    local f = io.open(KOBO_WIFI_SCRIPT, "w")
+    if not f then return false end
+    f:write(script)
+    f:close()
+    logger.info("NetworkMgr: Kobo Wi-Fi in the background with", #adds, "saved network(s)")
+    os.execute("sh " .. KOBO_WIFI_SCRIPT .. " &")
+    return true
+end
+
 function NetworkMgr:readNWSettings()
     self.nw_settings = LuaSettings:open(DataStorage:getSettingsDir().."/network.lua")
 end
@@ -169,13 +259,13 @@ function NetworkMgr:connectivityCheck(iter, callback, widget)
         self:_abortWifiConnection()
         return
     end
-    -- Kobo fork: in the background, restore-wifi-async.sh gives up after
-    -- 15 s and takes Wi-Fi down again; no need to wait out the 45 s then.
+    -- Kobo fork: in the background, the script takes Wi-Fi down again when
+    -- no saved network answers; no need to wait out the 45 s then.
     local bg = self._background_wifi
     if bg then
         if self:isWifiOn() then
             bg.seen_on = true
-        elseif bg.seen_on or iter >= 80 then
+        elseif bg.seen_on then
             logger.info("Background Wi-Fi: the connection failed (after", iter * 0.25, "seconds)")
             self:_abortWifiConnection()
             return
@@ -246,6 +336,7 @@ function NetworkMgr:init()
     end
     self.restoreWifiAsync = function(mgr, ...)
         if mgr:refusedByNoNetwork() then return end
+        if Device:isKobo() and mgr:_koboWifiAsync() then return end
         return restoreWifiAsync(mgr, ...)
     end
     self.interface = self:getNetworkInterfaceName()
